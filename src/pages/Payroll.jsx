@@ -1,8 +1,11 @@
 import { useState } from 'react';
-import { Wallet, Users, Download, Sparkles, CheckCircle, AlertTriangle, Eye, FileText, Printer } from 'lucide-react';
+import { Wallet, Users, Download, Sparkles, CheckCircle, AlertTriangle, Eye, Printer, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { employees } from '../data/employees';
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, LineChart, Line } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
+import PageBreadcrumb from '../components/common/PageBreadcrumb';
+import Badge from '../components/ui/badge/Badge';
+import Button from '../components/ui/button/Button';
 
 const SALARY_STRUCTURES = [
   { grade: 'Senior Doctor', basic: 85000, hra: 25500, da: 8500, allowances: 12000, gross: 131000, pf: 10200, esi: 0, net: 120800, staff: 6 },
@@ -11,8 +14,8 @@ const SALARY_STRUCTURES = [
   { grade: 'Staff Nurse', basic: 22000, hra: 6600, da: 2200, allowances: 3500, gross: 34300, pf: 2640, esi: 693, net: 30967, staff: 32 },
   { grade: 'Lab Technician', basic: 18000, hra: 5400, da: 1800, allowances: 2500, gross: 27700, pf: 2160, esi: 567, net: 24973, staff: 8 },
   { grade: 'Receptionist / Admin', basic: 15000, hra: 4500, da: 1500, allowances: 2000, gross: 23000, pf: 1800, esi: 473, net: 20727, staff: 12 },
-  { grade: 'Security', basic: 12000, hra: 3600, da: 1200, allowances: 1500, gross: 18300, pf: 1440, esi: 378, net: 16482, staff: 10 },
-  { grade: 'Housekeeping', basic: 9500, hra: 2850, da: 950, allowances: 1000, gross: 14300, pf: 1140, esi: 297, net: 12863, staff: 20 },
+  { grade: 'Security Staff', basic: 12000, hra: 3600, da: 1200, allowances: 1500, gross: 18300, pf: 1440, esi: 378, net: 16482, staff: 10 },
+  { grade: 'Housekeeping Services', basic: 9500, hra: 2850, da: 950, allowances: 1000, gross: 14300, pf: 1140, esi: 297, net: 12863, staff: 20 },
 ];
 
 const PAYROLL_MONTHS = ['Aug 2026', 'Jul 2026', 'Jun 2026', 'May 2026', 'Apr 2026'];
@@ -26,117 +29,126 @@ const TREND_DATA = [
   { month: 'Sep', gross: 40.2, net: 35.9 },
 ];
 
-const GlassTooltip = ({ active, payload, label }) => {
-  if (!active || !payload?.length) return null;
-  return (
-    <div style={{
-      background: 'rgba(10,15,30,0.95)', border: '1px solid rgba(255,255,255,0.12)',
-      borderRadius: 12, padding: '10px 14px', backdropFilter: 'blur(16px)',
-    }}>
-      <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginBottom: 6 }}>{label}</p>
-      {payload.map((p, i) => (
-        <p key={i} style={{ fontSize: 13, fontWeight: 600, color: p.color }}>
-          {p.name}: <span style={{ color: '#fff' }}>₹{p.value}L</span>
-        </p>
-      ))}
-    </div>
-  );
-};
-
 function PayslipModal({ emp, onClose }) {
-  const struct = SALARY_STRUCTURES[2]; // mock
+  const struct = SALARY_STRUCTURES[2];
   const handlePrint = () => {
-    toast.success('Payslip sent to printer');
+    toast.success('Payslip queued for printing');
   };
+
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-glass" style={{ width: '100%', maxWidth: 580, padding: '28px 32px' }} onClick={e => e.stopPropagation()}>
-        {/* Header */}
-        <div style={{ borderBottom: '1px solid rgba(255,255,255,0.07)', paddingBottom: 20, marginBottom: 20 }}>
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 style={{ fontSize: 18, fontWeight: 800, color: '#fff' }}>Payslip — September 2026</h3>
-              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', marginTop: 3 }}>Kanakadurga Nursing Home</p>
-            </div>
-            <button className="btn-secondary" style={{ fontSize: 12 }} onClick={handlePrint}>
-              <Printer style={{ width: 13, height: 13 }} /> Print
+      <div className="modal-glass max-w-xl" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-gray-800">
+          <div>
+            <h3 className="text-base font-bold text-gray-900 dark:text-white">Confidential Payslip</h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">Month: September 2026</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" startIcon={<Printer className="w-4 h-4" />} onClick={handlePrint}>
+              Print
+            </Button>
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1">
+              <X className="w-5 h-5" />
             </button>
           </div>
-          <div style={{ marginTop: 16, display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-            {[
-              { label: 'Employee', value: emp?.name || 'Dr. Ravi Shankar' },
-              { label: 'Employee ID', value: emp?.id || 'KD-EMP-0001' },
-              { label: 'Department', value: emp?.department || 'ICU' },
-              { label: 'Designation', value: emp?.designation || 'Senior Doctor' },
-            ].map(({ label, value }) => (
-              <div key={label}>
-                <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</p>
-                <p style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.85)', marginTop: 2 }}>{value}</p>
-              </div>
-            ))}
+        </div>
+
+        {/* Employee Summary Card */}
+        <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3 rounded-xl border border-gray-100 bg-gray-50/60 p-3 text-xs dark:border-gray-800 dark:bg-white/[0.02]">
+          <div>
+            <span className="text-gray-400 block text-[10px] uppercase font-semibold">Employee</span>
+            <p className="font-semibold text-gray-900 dark:text-white">{emp?.name || 'Dr. Ravi Shankar'}</p>
+          </div>
+          <div>
+            <span className="text-gray-400 block text-[10px] uppercase font-semibold">Staff ID</span>
+            <p className="font-mono text-gray-700 dark:text-gray-300">{emp?.id || 'KD-EMP-0001'}</p>
+          </div>
+          <div>
+            <span className="text-gray-400 block text-[10px] uppercase font-semibold">Department</span>
+            <p className="text-gray-700 dark:text-gray-300">{emp?.department || 'ICU'}</p>
+          </div>
+          <div>
+            <span className="text-gray-400 block text-[10px] uppercase font-semibold">Designation</span>
+            <p className="text-gray-700 dark:text-gray-300">{emp?.designation || 'Senior Doctor'}</p>
           </div>
         </div>
 
-        {/* Earnings & Deductions */}
-        <div className="grid grid-cols-2 gap-5 mb-5">
-          <div>
-            <p style={{ fontSize: 11, fontWeight: 700, color: '#34D399', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>Earnings</p>
-            {[
-              { label: 'Basic Salary', amt: struct.basic },
-              { label: 'HRA', amt: struct.hra },
-              { label: 'Dearness Allowance', amt: struct.da },
-              { label: 'Other Allowances', amt: struct.allowances },
-            ].map(({ label, amt }) => (
-              <div key={label} className="flex justify-between" style={{ marginBottom: 8 }}>
-                <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>{label}</span>
-                <span style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.85)', fontFamily: "'JetBrains Mono', monospace" }}>₹{amt.toLocaleString('en-IN')}</span>
+        {/* Breakdown */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+          <div className="rounded-xl border border-gray-200 p-3.5 dark:border-gray-800">
+            <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-2.5">
+              Gross Earnings
+            </p>
+            <div className="space-y-2 text-xs">
+              {[
+                { label: 'Basic Salary', amt: struct.basic },
+                { label: 'House Rent Allowance (HRA)', amt: struct.hra },
+                { label: 'Dearness Allowance (DA)', amt: struct.da },
+                { label: 'Special Medical Allowance', amt: struct.allowances },
+              ].map(({ label, amt }) => (
+                <div key={label} className="flex justify-between py-1 border-b border-gray-100 dark:border-gray-800">
+                  <span className="text-gray-600 dark:text-gray-400">{label}</span>
+                  <span className="font-mono font-medium text-gray-900 dark:text-white">₹{amt.toLocaleString('en-IN')}</span>
+                </div>
+              ))}
+              <div className="flex justify-between pt-1.5 font-bold">
+                <span className="text-gray-900 dark:text-white">Gross Amount</span>
+                <span className="font-mono text-emerald-600 dark:text-emerald-400">₹{struct.gross.toLocaleString('en-IN')}</span>
               </div>
-            ))}
-            <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 8, marginTop: 8 }} className="flex justify-between">
-              <span style={{ fontSize: 12, fontWeight: 700, color: '#34D399' }}>Gross Salary</span>
-              <span style={{ fontSize: 14, fontWeight: 800, color: '#34D399', fontFamily: "'JetBrains Mono', monospace" }}>₹{struct.gross.toLocaleString('en-IN')}</span>
             </div>
           </div>
-          <div>
-            <p style={{ fontSize: 11, fontWeight: 700, color: '#F87171', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>Deductions</p>
-            {[
-              { label: "PF (12%)", amt: struct.pf },
-              { label: 'ESI', amt: struct.esi },
-              { label: 'Professional Tax', amt: 200 },
-              { label: 'TDS', amt: 0 },
-            ].map(({ label, amt }) => (
-              <div key={label} className="flex justify-between" style={{ marginBottom: 8 }}>
-                <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>{label}</span>
-                <span style={{ fontSize: 12, fontWeight: 600, color: amt > 0 ? '#F87171' : 'rgba(255,255,255,0.3)', fontFamily: "'JetBrains Mono', monospace" }}>
-                  {amt > 0 ? `₹${amt.toLocaleString('en-IN')}` : 'Nil'}
+
+          <div className="rounded-xl border border-gray-200 p-3.5 dark:border-gray-800">
+            <p className="text-xs font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider mb-2.5">
+              Statutory Deductions
+            </p>
+            <div className="space-y-2 text-xs">
+              {[
+                { label: "Provident Fund (PF)", amt: struct.pf },
+                { label: 'Employee State Insurance (ESI)', amt: struct.esi },
+                { label: 'Professional Tax (PT)', amt: 200 },
+                { label: 'Income Tax (TDS)', amt: 0 },
+              ].map(({ label, amt }) => (
+                <div key={label} className="flex justify-between py-1 border-b border-gray-100 dark:border-gray-800">
+                  <span className="text-gray-600 dark:text-gray-400">{label}</span>
+                  <span className="font-mono font-medium text-rose-600 dark:text-rose-400">
+                    {amt > 0 ? `- ₹${amt.toLocaleString('en-IN')}` : 'Nil'}
+                  </span>
+                </div>
+              ))}
+              <div className="flex justify-between pt-1.5 font-bold">
+                <span className="text-gray-900 dark:text-white">Total Deductions</span>
+                <span className="font-mono text-rose-600 dark:text-rose-400">
+                  - ₹{(struct.pf + struct.esi + 200).toLocaleString('en-IN')}
                 </span>
               </div>
-            ))}
-            <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 8, marginTop: 8 }} className="flex justify-between">
-              <span style={{ fontSize: 12, fontWeight: 700, color: '#F87171' }}>Total Deductions</span>
-              <span style={{ fontSize: 14, fontWeight: 800, color: '#F87171', fontFamily: "'JetBrains Mono', monospace" }}>₹{(struct.pf + struct.esi + 200).toLocaleString('en-IN')}</span>
             </div>
           </div>
         </div>
 
-        {/* Net */}
-        <div style={{
-          background: 'linear-gradient(135deg, rgba(14,165,233,0.1), rgba(99,102,241,0.1))',
-          border: '1px solid rgba(14,165,233,0.2)',
-          borderRadius: 16, padding: '16px 20px',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        }}>
-          <p style={{ fontSize: 15, fontWeight: 700, color: '#fff' }}>Net Pay (Take Home)</p>
-          <p style={{ fontSize: 26, fontWeight: 900, color: '#38BDF8', fontFamily: "'JetBrains Mono', monospace" }}>
+        {/* Net Take Home */}
+        <div className="mt-4 flex items-center justify-between rounded-xl border border-brand-200 bg-brand-50/60 p-4 dark:border-brand-500/20 dark:bg-brand-500/10">
+          <div>
+            <p className="text-xs font-semibold text-brand-700 dark:text-brand-300 uppercase">Net Salary Credited</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Via Bank NEFT / Direct Deposit</p>
+          </div>
+          <p className="font-mono text-2xl font-bold text-brand-600 dark:text-brand-400">
             ₹{struct.net.toLocaleString('en-IN')}
           </p>
         </div>
 
         <div className="flex gap-3 mt-5">
-          <button className="btn-secondary" style={{ flex: 1, justifyContent: 'center', fontSize: 12 }} onClick={onClose}>Close</button>
-          <button className="btn-primary" style={{ flex: 1, justifyContent: 'center', fontSize: 12 }} onClick={() => { toast.success('Payslip downloaded as PDF'); onClose(); }}>
-            <Download style={{ width: 13, height: 13 }} /> Download PDF
-          </button>
+          <Button variant="outline" className="flex-1" onClick={onClose}>
+            Close
+          </Button>
+          <Button
+            variant="primary"
+            className="flex-1"
+            startIcon={<Download className="w-4 h-4" />}
+            onClick={() => { toast.success('Payslip downloaded as PDF'); onClose(); }}
+          >
+            Download PDF
+          </Button>
         </div>
       </div>
     </div>
@@ -144,11 +156,11 @@ function PayslipModal({ emp, onClose }) {
 }
 
 export default function Payroll() {
-  const [activeTab, setActiveTab] = useState('structure');
-  const [showPayslip, setShowPayslip] = useState(false);
-  const [selectedEmp, setSelectedEmp] = useState(null);
-  const [processing, setProcessing] = useState(false);
-  const [processed, setProcessed] = useState(false);
+  const [activeTab, setActiveTab]         = useState('structure');
+  const [showPayslip, setShowPayslip]     = useState(false);
+  const [selectedEmp, setSelectedEmp]     = useState(null);
+  const [processing, setProcessing]       = useState(false);
+  const [processed, setProcessed]         = useState(false);
   const [selectedMonth, setSelectedMonth] = useState('Sep 2026');
 
   const totalGross = SALARY_STRUCTURES.reduce((sum, s) => sum + s.gross * s.staff, 0);
@@ -157,7 +169,7 @@ export default function Payroll() {
 
   const handleProcess = async () => {
     setProcessing(true);
-    await new Promise(r => setTimeout(r, 2000));
+    await new Promise(r => setTimeout(r, 1600));
     setProcessed(true);
     setProcessing(false);
     toast.success(`${selectedMonth} payroll processed successfully for ${totalStaff} employees!`);
@@ -166,17 +178,20 @@ export default function Payroll() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between flex-wrap gap-4">
-        <div>
-          <h1 style={{ fontSize: 26, fontWeight: 900, color: '#fff', letterSpacing: '-0.04em' }}>
-            Payroll Management
-          </h1>
-          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', marginTop: 4 }}>
-            AI-powered payroll processing with anomaly detection · {selectedMonth}
-          </p>
-        </div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <PageBreadcrumb
+          pageTitle="Payroll & Statutory Compensation"
+          breadcrumbs={[
+            { label: 'Workforce', path: '/employees' },
+            { label: 'Payroll' }
+          ]}
+        />
         <div className="flex items-center gap-3">
-          <select value={selectedMonth} onChange={e => setSelectedMonth(e.target.value)} className="input-field" style={{ width: 'auto', fontSize: 13 }}>
+          <select
+            value={selectedMonth}
+            onChange={e => setSelectedMonth(e.target.value)}
+            className="input-field text-xs py-1.5 w-auto"
+          >
             <option value="Sep 2026">September 2026</option>
             {PAYROLL_MONTHS.map(m => <option key={m} value={m}>{m}</option>)}
           </select>
@@ -184,29 +199,41 @@ export default function Payroll() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          { label: 'Gross Payroll', value: `₹${(totalGross / 100000).toFixed(1)}L`, color: '#38BDF8' },
-          { label: 'Net Disbursement', value: `₹${(totalNet / 100000).toFixed(1)}L`, color: '#34D399' },
-          { label: 'Total Deductions', value: `₹${((totalGross - totalNet) / 100000).toFixed(1)}L`, color: '#F87171' },
-          { label: 'Employees', value: totalStaff, color: '#FBBF24' },
+          { label: 'Gross Payroll', value: `₹${(totalGross / 100000).toFixed(1)}L`, color: 'text-brand-600 dark:text-brand-400' },
+          { label: 'Net Disbursement', value: `₹${(totalNet / 100000).toFixed(1)}L`, color: 'text-emerald-600 dark:text-emerald-400' },
+          { label: 'Statutory Deductions', value: `₹${((totalGross - totalNet) / 100000).toFixed(1)}L`, color: 'text-rose-600 dark:text-rose-400' },
+          { label: 'Active Roster Staff', value: totalStaff, color: 'text-amber-600 dark:text-amber-400' },
         ].map(item => (
-          <div key={item.label} className="glass-card" style={{ padding: '18px 20px' }}>
-            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>{item.label}</p>
-            <p style={{ fontSize: 26, fontWeight: 900, color: item.color, letterSpacing: '-0.04em', fontFamily: "'JetBrains Mono', monospace" }}>{item.value}</p>
+          <div key={item.label} className="rounded-2xl border border-gray-200 bg-white p-4 shadow-xs dark:border-gray-800 dark:bg-white/[0.03]">
+            <p className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
+              {item.label}
+            </p>
+            <p className={`text-2xl sm:text-3xl font-bold font-mono tracking-tight ${item.color}`}>
+              {item.value}
+            </p>
           </div>
         ))}
       </div>
 
-      {/* Tabs */}
-      <div className="tab-bar">
+      {/* Tab bar */}
+      <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-gray-200 bg-gray-100 p-1.5 dark:border-gray-800 dark:bg-gray-900/60 w-fit">
         {[
           { id: 'structure', label: 'Salary Structure' },
-          { id: 'process', label: 'Process Payroll' },
-          { id: 'payslips', label: 'Payslips' },
-          { id: 'trends', label: 'Trends' },
+          { id: 'process', label: 'Batch Processing' },
+          { id: 'payslips', label: 'Employee Payslips' },
+          { id: 'trends', label: 'Historical Trends' },
         ].map(tab => (
-          <button key={tab.id} className={activeTab === tab.id ? 'tab-active' : 'tab-item'} onClick={() => setActiveTab(tab.id)}>
+          <button
+            key={tab.id}
+            className={`rounded-lg px-4 py-2 text-xs sm:text-sm font-semibold transition-all ${
+              activeTab === tab.id
+                ? 'bg-white text-brand-600 shadow-xs dark:bg-brand-500 dark:text-white'
+                : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
+            }`}
+            onClick={() => setActiveTab(tab.id)}
+          >
             {tab.label}
           </button>
         ))}
@@ -214,32 +241,31 @@ export default function Payroll() {
 
       {/* SALARY STRUCTURE */}
       {activeTab === 'structure' && (
-        <div className="glass-card" style={{ overflow: 'hidden' }}>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <div className="rounded-2xl border border-gray-200 bg-white shadow-xs overflow-hidden dark:border-gray-800 dark:bg-white/[0.03]">
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-sm">
               <thead>
-                <tr style={{ background: 'rgba(255,255,255,0.03)' }}>
+                <tr className="border-b border-gray-200 bg-gray-50/50 dark:border-gray-800 dark:bg-white/[0.02]">
                   {['Grade / Designation', 'Staff', 'Basic', 'HRA', 'DA', 'Allowances', 'Gross', 'PF', 'ESI', 'Net Pay'].map(h => (
-                    <th key={h} className="table-header" style={{ textAlign: h === 'Grade / Designation' ? 'left' : 'right' }}>{h}</th>
+                    <th key={h} className={`table-header ${h === 'Grade / Designation' ? 'text-left' : 'text-right'}`}>
+                      {h}
+                    </th>
                   ))}
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                 {SALARY_STRUCTURES.map(s => (
                   <tr key={s.grade} className="table-row">
-                    <td className="table-cell">
-                      <span style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.9)' }}>{s.grade}</span>
-                    </td>
-                    <td className="table-cell" style={{ textAlign: 'right' }}>
-                      <span style={{ fontSize: 12, color: '#38BDF8', fontWeight: 600 }}>{s.staff}</span>
-                    </td>
+                    <td className="table-cell font-semibold text-gray-900 dark:text-white text-xs">{s.grade}</td>
+                    <td className="table-cell text-right font-mono text-xs font-semibold text-brand-600 dark:text-brand-400">{s.staff}</td>
                     {[s.basic, s.hra, s.da, s.allowances, s.gross, s.pf, s.esi, s.net].map((val, i) => (
-                      <td key={i} className="table-cell" style={{ textAlign: 'right', fontFamily: "'JetBrains Mono', monospace" }}>
-                        <span style={{
-                          fontSize: 12,
-                          color: i === 7 ? '#34D399' : i >= 5 ? '#F87171' : i === 4 ? '#FBBF24' : 'rgba(255,255,255,0.65)',
-                          fontWeight: (i === 4 || i === 7) ? 700 : 400,
-                        }}>
+                      <td key={i} className="table-cell text-right font-mono text-xs">
+                        <span className={
+                          i === 7 ? 'font-bold text-emerald-600 dark:text-emerald-400' :
+                          i >= 5 ? 'text-rose-600 dark:text-rose-400' :
+                          i === 4 ? 'font-semibold text-amber-600 dark:text-amber-400' :
+                          'text-gray-600 dark:text-gray-300'
+                        }>
                           {val > 0 ? `₹${val.toLocaleString('en-IN')}` : '—'}
                         </span>
                       </td>
@@ -248,15 +274,15 @@ export default function Payroll() {
                 ))}
               </tbody>
               <tfoot>
-                <tr style={{ background: 'rgba(255,255,255,0.04)' }}>
-                  <td className="table-cell" style={{ fontWeight: 700, color: '#fff' }}>Total</td>
-                  <td className="table-cell" style={{ textAlign: 'right', fontWeight: 700, color: '#38BDF8' }}>{totalStaff}</td>
+                <tr className="border-t border-gray-200 bg-gray-50/60 font-bold dark:border-gray-800 dark:bg-white/[0.02]">
+                  <td className="table-cell text-gray-900 dark:text-white">Hospital Total</td>
+                  <td className="table-cell text-right font-mono text-brand-600 dark:text-brand-400">{totalStaff}</td>
                   <td colSpan={4} className="table-cell" />
-                  <td className="table-cell" style={{ textAlign: 'right', fontFamily: "'JetBrains Mono', monospace", fontWeight: 800, color: '#FBBF24', fontSize: 13 }}>
+                  <td className="table-cell text-right font-mono text-amber-600 dark:text-amber-400 font-bold">
                     ₹{(totalGross / 100000).toFixed(2)}L
                   </td>
                   <td colSpan={2} className="table-cell" />
-                  <td className="table-cell" style={{ textAlign: 'right', fontFamily: "'JetBrains Mono', monospace", fontWeight: 800, color: '#34D399', fontSize: 13 }}>
+                  <td className="table-cell text-right font-mono text-emerald-600 dark:text-emerald-400 font-bold">
                     ₹{(totalNet / 100000).toFixed(2)}L
                   </td>
                 </tr>
@@ -268,80 +294,81 @@ export default function Payroll() {
 
       {/* PROCESS PAYROLL */}
       {activeTab === 'process' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div className="glass-card" style={{ padding: 24 }}>
-            <h3 style={{ fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 20 }}>Process {selectedMonth} Payroll</h3>
-            {/* Checklist */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs dark:border-gray-800 dark:bg-white/[0.03]">
+            <h3 className="text-base font-bold text-gray-900 dark:text-white mb-2">Process {selectedMonth} Payroll</h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-6">Comprehensive automated validation checks</p>
+
             <div className="space-y-3 mb-6">
               {[
-                { label: 'Attendance data locked', done: true },
-                { label: 'Leave deductions computed', done: true },
-                { label: 'OT hours verified', done: true },
-                { label: 'Statutory compliance (PF/ESI) calculated', done: true },
-                { label: 'AI anomaly scan completed', done: !processed, ai: true },
-                { label: 'Payroll finalized & disbursed', done: processed },
+                { label: 'Biometric muster & attendance locked', done: true },
+                { label: 'Leave deductions & loss of pay (LOP) computed', done: true },
+                { label: 'Overtime & emergency OT verified by supervisors', done: true },
+                { label: 'Statutory compliance (PF & ESI) verified against salary caps', done: true },
+                { label: 'AI salary anomaly scan executed', done: !processed, ai: true },
+                { label: 'Bank disbursement NEFT batch ready', done: processed },
               ].map((item, i) => (
-                <div key={i} className="flex items-center gap-3" style={{
-                  background: item.done ? 'rgba(16,185,129,0.07)' : 'rgba(255,255,255,0.03)',
-                  border: `1px solid ${item.done ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.06)'}`,
-                  borderRadius: 10, padding: '10px 14px',
-                }}>
-                  <CheckCircle style={{ width: 16, height: 16, color: item.done ? '#34D399' : 'rgba(255,255,255,0.15)', flexShrink: 0 }} />
-                  <span style={{ fontSize: 13, color: item.done ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.35)' }}>{item.label}</span>
-                  {item.ai && <Sparkles style={{ width: 12, height: 12, color: '#818CF8', marginLeft: 'auto' }} />}
+                <div
+                  key={i}
+                  className={`flex items-center gap-3 rounded-xl border p-3 text-xs transition-all ${
+                    item.done
+                      ? 'border-emerald-200 bg-emerald-50/50 text-emerald-800 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300'
+                      : 'border-gray-200 bg-gray-50/50 text-gray-500 dark:border-gray-800 dark:bg-white/[0.01] dark:text-gray-400'
+                  }`}
+                >
+                  <CheckCircle className={`w-4 h-4 flex-shrink-0 ${item.done ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-300 dark:text-gray-600'}`} />
+                  <span className="font-medium flex-1">{item.label}</span>
+                  {item.ai && <Sparkles className="w-3.5 h-3.5 text-brand-500" />}
                 </div>
               ))}
             </div>
 
-            <button
-              onClick={handleProcess}
+            <Button
+              variant={processed ? "success" : "primary"}
+              className="w-full justify-center py-3"
               disabled={processing || processed}
-              className="btn-primary w-full"
-              style={{ justifyContent: 'center', fontSize: 14, padding: '14px 24px', opacity: processed ? 0.6 : 1 }}
+              onClick={handleProcess}
             >
               {processing ? (
                 <span className="flex items-center gap-2">
-                  <div className="animate-spin" style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%' }} />
-                  Processing Payroll...
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  Processing Roster Deductions...
                 </span>
               ) : processed ? (
                 <span className="flex items-center gap-2">
-                  <CheckCircle style={{ width: 16, height: 16 }} />
-                  Payroll Processed
+                  <CheckCircle className="w-4 h-4" />
+                  Payroll Finalized for {selectedMonth}
                 </span>
               ) : (
                 <span className="flex items-center gap-2">
-                  <Wallet style={{ width: 16, height: 16 }} />
-                  Process {selectedMonth} Payroll
+                  <Wallet className="w-4 h-4" />
+                  Execute {selectedMonth} Payroll Batch
                 </span>
               )}
-            </button>
+            </Button>
           </div>
 
-          <div className="glass-card" style={{ padding: 24 }}>
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs dark:border-gray-800 dark:bg-white/[0.03]">
             <div className="flex items-center gap-2 mb-4">
-              <Sparkles style={{ width: 15, height: 15, color: '#818CF8' }} />
-              <p style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>AI Anomaly Detection</p>
+              <Sparkles className="w-5 h-5 text-brand-500" />
+              <h3 className="text-base font-bold text-gray-900 dark:text-white">AI Payroll Anomaly Warnings</h3>
             </div>
             <div className="space-y-3">
               {[
-                { type: 'Overtime Spike', emp: 'Nurse Kavitha Nair · ICU', detail: 'OT hours 340% above baseline this month', color: '#F87171', sev: 'Review' },
-                { type: 'Duplicate Entry', emp: 'KD-EMP-0034 · Admin', detail: 'Two salary disbursements detected for same period', color: '#FB923C', sev: 'Block' },
-                { type: 'Grade Mismatch', emp: 'Kumar Swamy · ICU', detail: 'Salary grade does not match current designation', color: '#FBBF24', sev: 'Warning' },
+                { type: 'Overtime Spike', emp: 'Nurse Kavitha Nair · ICU', detail: 'OT hours 340% above baseline this month', color: 'error', sev: 'Requires Review' },
+                { type: 'Duplicate Disbursement', emp: 'KD-EMP-0034 · Admin', detail: 'Two salary disbursement requests detected for same period', color: 'error', sev: 'Disbursement Blocked' },
+                { type: 'Grade Mismatch', emp: 'Kumar Swamy · ICU', detail: 'Salary grade does not match verified designation in HRMS', color: 'warning', sev: 'Audit Warning' },
               ].map((anomaly, i) => (
-                <div key={i} style={{
-                  background: `${anomaly.color}08`, border: `1px solid ${anomaly.color}20`,
-                  borderRadius: 12, padding: '14px 16px',
-                }}>
-                  <div className="flex items-center justify-between mb-2">
-                    <span style={{ fontSize: 12, fontWeight: 700, color: anomaly.color }}>{anomaly.type}</span>
-                    <span style={{
-                      fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 100,
-                      color: anomaly.color, background: `${anomaly.color}18`, border: `1px solid ${anomaly.color}30`,
-                    }}>{anomaly.sev}</span>
+                <div
+                  key={i}
+                  className="rounded-xl border border-gray-200 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-white/[0.02]"
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-xs font-bold text-gray-900 dark:text-white">{anomaly.type}</span>
+                    <Badge variant="light" color={anomaly.color} size="sm">{anomaly.sev}</Badge>
                   </div>
-                  <p style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.7)', marginBottom: 3 }}>{anomaly.emp}</p>
-                  <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>{anomaly.detail}</p>
+                  <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">{anomaly.emp}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{anomaly.detail}</p>
                 </div>
               ))}
             </div>
@@ -349,43 +376,56 @@ export default function Payroll() {
         </div>
       )}
 
-      {/* PAYSLIPS */}
+      {/* PAYSLIPS TABLE */}
       {activeTab === 'payslips' && (
-        <div className="glass-card" style={{ overflow: 'hidden' }}>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <div className="rounded-2xl border border-gray-200 bg-white shadow-xs overflow-hidden dark:border-gray-800 dark:bg-white/[0.03]">
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-sm">
               <thead>
-                <tr style={{ background: 'rgba(255,255,255,0.03)' }}>
-                  {['Employee', 'Department', 'Designation', 'Gross', 'Deductions', 'Net Pay', 'Action'].map(h => (
-                    <th key={h} className="table-header" style={{ textAlign: h === 'Action' ? 'center' : 'left' }}>{h}</th>
+                <tr className="border-b border-gray-200 bg-gray-50/50 dark:border-gray-800 dark:bg-white/[0.02]">
+                  {['Employee', 'Department', 'Designation', 'Gross Pay', 'Deductions', 'Net Disbursed', 'Payslip'].map(h => (
+                    <th key={h} className={`table-header ${h === 'Payslip' ? 'text-center' : 'text-left'}`}>
+                      {h}
+                    </th>
                   ))}
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                 {employees.slice(0, 15).map((emp, i) => {
                   const struct = SALARY_STRUCTURES[i % SALARY_STRUCTURES.length];
                   return (
                     <tr key={emp.id} className="table-row">
                       <td className="table-cell">
                         <div className="flex items-center gap-3">
-                          <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'linear-gradient(135deg, rgba(14,165,233,0.2), rgba(99,102,241,0.2))', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#38BDF8' }}>
+                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-50 text-brand-600 font-bold text-xs dark:bg-brand-500/10 dark:text-brand-400 flex-shrink-0">
                             {emp.name.charAt(0)}
                           </div>
                           <div>
-                            <p style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.9)' }}>{emp.name}</p>
-                            <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontFamily: "'JetBrains Mono', monospace" }}>{emp.id}</p>
+                            <p className="font-semibold text-gray-900 dark:text-white text-xs">{emp.name}</p>
+                            <p className="font-mono text-[10px] text-gray-500 dark:text-gray-400">{emp.id}</p>
                           </div>
                         </div>
                       </td>
-                      <td className="table-cell" style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>{emp.department}</td>
-                      <td className="table-cell" style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>{emp.designation}</td>
-                      <td className="table-cell" style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, color: '#FBBF24', fontWeight: 600 }}>₹{struct.gross.toLocaleString('en-IN')}</td>
-                      <td className="table-cell" style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, color: '#F87171' }}>₹{(struct.pf + struct.esi + 200).toLocaleString('en-IN')}</td>
-                      <td className="table-cell" style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: '#34D399', fontWeight: 700 }}>₹{struct.net.toLocaleString('en-IN')}</td>
-                      <td className="table-cell" style={{ textAlign: 'center' }}>
-                        <button className="btn-icon" style={{ padding: 7 }} onClick={() => { setSelectedEmp(emp); setShowPayslip(true); }}>
-                          <Eye style={{ width: 14, height: 14 }} />
-                        </button>
+                      <td className="table-cell text-xs text-gray-600 dark:text-gray-400">{emp.department}</td>
+                      <td className="table-cell text-xs text-gray-600 dark:text-gray-400">{emp.designation}</td>
+                      <td className="table-cell font-mono text-xs text-amber-600 dark:text-amber-400 font-semibold">
+                        ₹{struct.gross.toLocaleString('en-IN')}
+                      </td>
+                      <td className="table-cell font-mono text-xs text-rose-600 dark:text-rose-400">
+                        ₹{(struct.pf + struct.esi + 200).toLocaleString('en-IN')}
+                      </td>
+                      <td className="table-cell font-mono text-xs text-emerald-600 dark:text-emerald-400 font-bold">
+                        ₹{struct.net.toLocaleString('en-IN')}
+                      </td>
+                      <td className="table-cell text-center">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="px-2 py-1"
+                          onClick={() => { setSelectedEmp(emp); setShowPayslip(true); }}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
                       </td>
                     </tr>
                   );
@@ -398,17 +438,28 @@ export default function Payroll() {
 
       {/* TRENDS */}
       {activeTab === 'trends' && (
-        <div className="glass-card" style={{ padding: 24 }}>
-          <p style={{ fontSize: 15, fontWeight: 700, color: '#fff', marginBottom: 20 }}>6-Month Payroll Trend (₹ Lakhs)</p>
-          <ResponsiveContainer width="100%" height={280}>
-            <LineChart data={TREND_DATA}>
-              <XAxis dataKey="month" tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <Tooltip content={<GlassTooltip />} />
-              <Line type="monotone" dataKey="gross" stroke="#38BDF8" strokeWidth={2.5} dot={{ fill: '#38BDF8', r: 4 }} name="Gross" />
-              <Line type="monotone" dataKey="net" stroke="#34D399" strokeWidth={2.5} dot={{ fill: '#34D399', r: 4 }} name="Net" />
-            </LineChart>
-          </ResponsiveContainer>
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs dark:border-gray-800 dark:bg-white/[0.03]">
+          <h3 className="text-base font-bold text-gray-900 dark:text-white mb-1">6-Month Disbursement Trajectory</h3>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-6">Gross vs Net salary expenditure (₹ in Lakhs)</p>
+          <div className="h-72 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={TREND_DATA}>
+                <XAxis dataKey="month" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#1f2937',
+                    border: '1px solid #374151',
+                    borderRadius: '0.75rem',
+                    color: '#f9fafb',
+                    fontSize: '12px',
+                  }}
+                />
+                <Line type="monotone" dataKey="gross" stroke="#465fff" strokeWidth={2.5} dot={{ fill: '#465fff', r: 4 }} name="Gross Expenditure" />
+                <Line type="monotone" dataKey="net" stroke="#10b981" strokeWidth={2.5} dot={{ fill: '#10b981', r: 4 }} name="Net Take Home" />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       )}
 

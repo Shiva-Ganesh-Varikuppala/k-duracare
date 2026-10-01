@@ -1,379 +1,327 @@
-import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
-import { Eye, EyeOff, Heart, Sparkles, Shield, Clock, ArrowRight, User, Lock, Zap, Phone, RefreshCw, CheckCircle2 } from "lucide-react";
-import { toast } from "react-hot-toast";
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import {
+  Eye,
+  EyeOff,
+  HeartPulse,
+  Shield,
+  CheckCircle2,
+  Lock,
+  Mail,
+  Sparkles,
+  ArrowRight,
+  UserCheck,
+  Stethoscope,
+  Activity,
+  ChevronRight,
+} from 'lucide-react';
+import { toast } from 'react-hot-toast';
+import Button from '../components/ui/button/Button';
+import Badge from '../components/ui/badge/Badge';
+import ThemeToggleButton from '../components/common/ThemeToggleButton';
 
-const DEMO_ACCOUNTS = [
-  { role: "Super Administrator", email: "admin@kduracare.in",    pass: "admin123",    name: "Dr K. B. Chowdary",   title: "Medical Director",        color: "#38BDF8", glow: "rgba(56,189,248,0.15)"  },
-  { role: "Hospital Administrator / Management", email: "management@kduracare.in", pass: "mgmt123", name: "Sri P. Venkateswara Rao", title: "Managing Director", color: "#818CF8", glow: "rgba(129,140,248,0.15)" },
-  { role: "Doctor",              email: "doctor@kduracare.in",   pass: "doc123",      name: "Dr. Ravi Shankar",    title: "Chief Cardiologist",      color: "#34D399", glow: "rgba(52,211,153,0.15)"  },
-  { role: "Nurse",               email: "nurse@kduracare.in",    pass: "nurse123",    name: "Mrs. Lakshmi Devi",   title: "Nursing Superintendent",  color: "#FBBF24", glow: "rgba(251,191,36,0.15)"  },
-  { role: "Receptionist",        email: "reception@kduracare.in", pass: "rec123",     name: "Mrs. Priya Sharma",   title: "Front Desk Executive",    color: "#38BDF8", glow: "rgba(56,189,248,0.15)"  },
-  { role: "Staff Employee",      email: "employee@kduracare.in", pass: "emp123",      name: "Ramesh Reddy",        title: "Senior ICU Technician",   color: "#94A3B8", glow: "rgba(148,163,184,0.15)" },
-  { role: "Security Guard",      email: "guard@kduracare.in",    pass: "guard123",    name: "Mr. Siva Kumar",      title: "Gate Security Guard",     color: "#2DD4BF", glow: "rgba(45,212,191,0.15)"  },
-  { role: "Laboratory Staff",    email: "lab@kduracare.in",      pass: "lab123",      name: "Mr. Venkat Kumar",    title: "Chief Biochemist",        color: "#06B6D4", glow: "rgba(6,182,212,0.15)"   },
-  { role: "Aayah",               email: "aayah@kduracare.in",    pass: "aayah123",    name: "Mrs. Meena Yadav",    title: "Ward Support Caregiver",  color: "#EC4899", glow: "rgba(236,72,153,0.15)"  },
-  { role: "Payroll Officer",     email: "payroll@kduracare.in",  pass: "pay123",      name: "Mr. Rajesh Varma",    title: "Senior Payroll Officer",  color: "#A855F7", glow: "rgba(168,85,247,0.15)"  },
+const CATEGORIZED_DEMO_USERS = [
+  {
+    category: 'Leadership & Administration',
+    roles: [
+      { id: 'admin', role: 'Super Administrator', email: 'admin@kduracare.in', name: 'Dr K. B. Chowdary', title: 'Medical Director', color: 'primary' },
+      { id: 'management', role: 'Hospital Administrator / Management', email: 'management@kduracare.in', name: 'Sri P. Venkateswara Rao', title: 'Managing Director', color: 'info' },
+      { id: 'hr', role: 'HR Administrator', email: 'hr@kduracare.in', name: 'Mrs. Sunitha Reddy', title: 'Head of HR', color: 'purple' },
+      { id: 'payroll', role: 'Payroll Officer', email: 'payroll@kduracare.in', name: 'Mr. Rajesh Varma', title: 'Senior Payroll Officer', color: 'warning' },
+    ],
+  },
+  {
+    category: 'Clinical & Patient Care',
+    roles: [
+      { id: 'doctor', role: 'Doctor', email: 'doctor@kduracare.in', name: 'Dr. Ravi Shankar', title: 'Chief Cardiologist', color: 'success' },
+      { id: 'nurse', role: 'Nurse', email: 'nurse@kduracare.in', name: 'Mrs. Lakshmi Devi', title: 'Nursing Superintendent', color: 'warning' },
+      { id: 'icu', role: 'ICU Staff', email: 'icu@kduracare.in', name: 'Kavitha Nair', title: 'Senior ICU Staff Nurse', color: 'error' },
+      { id: 'hod', role: 'Department Head / HOD', email: 'hod@kduracare.in', name: 'Dr. Ramesh Babu', title: 'HOD Critical Care', color: 'primary' },
+    ],
+  },
+  {
+    category: 'Allied & Diagnostic Services',
+    roles: [
+      { id: 'opd', role: 'OPD Staff', email: 'opd@kduracare.in', name: 'Priya Nair', title: 'OPD In-Charge', color: 'info' },
+      { id: 'lab', role: 'Laboratory Staff', email: 'lab@kduracare.in', name: 'Mr. Venkat Kumar', title: 'Chief Medical Biochemist', color: 'purple' },
+      { id: 'ot', role: 'OT Staff', email: 'ot@kduracare.in', name: 'Dr. Anand Sharma', title: 'OT Head & Surgeon', color: 'success' },
+      { id: 'physio', role: 'Physiotherapy Staff', email: 'physio@kduracare.in', name: 'Mr. Ravi Teja', title: 'Senior Physiotherapist', color: 'primary' },
+      { id: 'reception', role: 'Receptionist', email: 'reception@kduracare.in', name: 'Mrs. Priya Sharma', title: 'Front Desk Executive', color: 'info' },
+    ],
+  },
+  {
+    category: 'Operations, Facility & Support',
+    roles: [
+      { id: 'housekeeping', role: 'Housekeeping Supervisor', email: 'housekeeping@kduracare.in', name: 'Mr. Suresh Yadav', title: 'Sanitation Supervisor', color: 'warning' },
+      { id: 'aayah', role: 'Aayah', email: 'aayah@kduracare.in', name: 'Mrs. Meena Yadav', title: 'Ward Support Caregiver', color: 'purple' },
+      { id: 'sweeper', role: 'Sweeper', email: 'sweeper@kduracare.in', name: 'Mr. Kiran Babu', title: 'Sanitation Sweeper', color: 'light' },
+      { id: 'scavenger', role: 'Scavenger', email: 'scavenger@kduracare.in', name: 'Mr. Naresh Goud', title: 'Bio-Waste Operator', color: 'error' },
+      { id: 'dhobi', role: 'Dhobi', email: 'dhobi@kduracare.in', name: 'Mr. Balaiah', title: 'Hospital Laundry Master', color: 'light' },
+      { id: 'security', role: 'Security Supervisor', email: 'security@kduracare.in', name: 'Mr. Nagaraju', title: 'Chief Security Officer', color: 'info' },
+      { id: 'guard', role: 'Security Guard', email: 'guard@kduracare.in', name: 'Mr. Siva Kumar', title: 'Gate Security Guard', color: 'primary' },
+      { id: 'employee', role: 'Staff Employee', email: 'employee@kduracare.in', name: 'Ramesh Reddy', title: 'Senior ICU Technician', color: 'light' },
+    ],
+  },
 ];
-
-function LiveClock() {
-  const [now, setNow] = useState(new Date());
-  useEffect(() => { const t = setInterval(() => setNow(new Date()), 1000); return () => clearInterval(t); }, []);
-  return (
-    <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "12px", color: "rgba(255,255,255,0.45)", letterSpacing: "0.05em" }}>
-      {now.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
-    </span>
-  );
-}
-
-function generateOTP() {
-  return String(Math.floor(100000 + Math.random() * 900000));
-}
-
-function OTPInput({ value, onChange }) {
-  const inputs = useRef([]);
-  const digits = (value + "      ").slice(0, 6).split("");
-
-  const handleKey = (i, e) => {
-    if (e.key === "Backspace") {
-      const next = [...digits]; next[i] = " ";
-      onChange(next.join("").trimEnd());
-      if (i > 0) inputs.current[i - 1]?.focus();
-    } else if (/^\d$/.test(e.key)) {
-      const next = [...digits]; next[i] = e.key;
-      const joined = next.join("").replace(/ /g, "").slice(0, 6);
-      onChange(joined);
-      if (i < 5) inputs.current[i + 1]?.focus();
-    }
-    e.preventDefault();
-  };
-
-  const handlePaste = (e) => {
-    e.preventDefault();
-    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
-    onChange(pasted);
-    inputs.current[Math.min(pasted.length, 5)]?.focus();
-  };
-
-  return (
-    <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
-      {Array.from({ length: 6 }).map((_, i) => {
-        const d = value[i] || "";
-        return (
-          <input
-            key={i}
-            ref={el => inputs.current[i] = el}
-            type="text" inputMode="numeric" maxLength={1}
-            value={d} readOnly={false}
-            onChange={() => {}}
-            onKeyDown={e => handleKey(i, e)}
-            onPaste={handlePaste}
-            autoFocus={i === 0}
-            style={{
-              width: "46px", height: "54px", textAlign: "center",
-              fontSize: "22px", fontWeight: 800,
-              fontFamily: "'JetBrains Mono', monospace",
-              color: "#ffffff",
-              background: d ? "rgba(14,165,233,0.2)" : "rgba(255,255,255,0.06)",
-              border: d ? "1.5px solid rgba(14,165,233,0.6)" : "1.5px solid rgba(255,255,255,0.12)",
-              borderRadius: "12px", outline: "none", transition: "all 0.2s ease",
-              caretColor: "transparent",
-            }}
-          />
-        );
-      })}
-    </div>
-  );
-}
 
 export default function Login() {
   const { user, login, loginAsDemo, DEMO_USERS } = useAuth();
   const navigate = useNavigate();
 
-  const [email, setEmail]       = useState("admin@kduracare.in");
-  const [password, setPassword] = useState("admin123");
-  const [showPass, setShowPass] = useState(false);
-  const [error, setError]       = useState("");
-  const [loading, setLoading]   = useState(false);
-
-  const [otpStep, setOtpStep]         = useState(false);
-  const [pendingUser, setPendingUser] = useState(null);
-  const [otpCode, setOtpCode]         = useState("");
-  const [otpInput, setOtpInput]       = useState("");
-  const [otpError, setOtpError]       = useState("");
-  const [otpLoading, setOtpLoading]   = useState(false);
-  const [resendCD, setResendCD]       = useState(0);
-
-  useEffect(() => { if (user) navigate("/dashboard", { replace: true }); }, [user, navigate]);
+  const [identifier, setIdentifier] = useState('admin@kduracare.in');
+  const [password, setPassword] = useState('admin123');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [activeCategory, setActiveCategory] = useState('Leadership & Administration');
 
   useEffect(() => {
-    if (resendCD <= 0) return;
-    const t = setTimeout(() => setResendCD(c => c - 1), 1000);
-    return () => clearTimeout(t);
-  }, [resendCD]);
+    if (user) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [user, navigate]);
 
-  const sendOTP = (targetUser) => {
-    const code = generateOTP();
-    setOtpCode(code);
-    setOtpInput("");
-    setOtpError("");
-    setResendCD(30);
-    toast(
-      () => (
-        <div style={{ fontFamily: "monospace" }}>
-          <div style={{ fontWeight: 700, marginBottom: 4, color: "#0EA5E9" }}>OTP for {targetUser.name}</div>
-          <div style={{ fontSize: 30, fontWeight: 900, letterSpacing: "0.25em", color: "#fff" }}>{code}</div>
-          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginTop: 4 }}>Valid 5 minutes � Do not share</div>
-        </div>
-      ),
-      { duration: 15000, style: { background: "#0f172a", border: "1px solid rgba(14,165,233,0.35)", borderRadius: "16px" } }
-    );
-  };
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setLoading(true);
 
-  const handleCredentialSubmit = async (e) => {
-    if (e) e.preventDefault();
-    setError(""); setLoading(true);
-    try {
-      const res = login(email, password);
-      if (res && res.success) {
-        setPendingUser(res.user);
-        setOtpStep(true);
-        sendOTP(res.user);
-        toast.success("Credentials verified! OTP sent.", { icon: "??" });
-      } else {
-        setError("Invalid credentials. Use demo logins below or check your password.");
-        toast.error("Authentication failed.");
-      }
-    } finally { setLoading(false); }
-  };
-
-  const handleOTPSubmit = async (e) => {
-    if (e) e.preventDefault();
-    setOtpError("");
-    if (otpInput.length < 6) { setOtpError("Please enter all 6 digits."); return; }
-    setOtpLoading(true);
-    await new Promise(r => setTimeout(r, 800));
-    if (otpInput === otpCode) {
-      loginAsDemo(pendingUser);
-      toast.success(`Welcome back, ${pendingUser.name}!`, { icon: "??" });
-      navigate("/dashboard", { replace: true });
+    const res = login(identifier, password);
+    if (res?.success) {
+      toast.success(`Welcome back, ${res.user.name}!`);
+      navigate('/dashboard', { replace: true });
     } else {
-      setOtpError("Incorrect OTP. Check the notification or request a new code.");
-      setOtpLoading(false);
+      toast.error('Invalid credentials. Check email or select a demo account below.');
+    }
+    setLoading(false);
+  };
+
+  const handleDemoSelect = (demoEmail) => {
+    const found = DEMO_USERS.find(
+      (u) => u.email.toLowerCase() === demoEmail.toLowerCase() || u.username === demoEmail
+    );
+    if (found) {
+      loginAsDemo(found);
+      toast.success(`Signed in as: ${found.name} (${found.role})`);
+      navigate('/dashboard', { replace: true });
     }
   };
 
-  const handleQuickDemoLogin = (demo) => {
-    const targetUser = DEMO_USERS.find(u => u.email.toLowerCase() === demo.email.toLowerCase()) || DEMO_USERS[0];
-    loginAsDemo(targetUser);
-    toast.success(`Demo: ${targetUser.role} (${targetUser.name})`, { icon: "?" });
-    navigate("/dashboard", { replace: true });
-  };
-
-  const handleResend = () => {
-    if (resendCD > 0 || !pendingUser) return;
-    sendOTP(pendingUser);
-    toast.success("New OTP sent!");
-  };
-
   return (
-    <div style={{ minHeight: "100vh", background: "radial-gradient(circle at 50% 0%, #0c152e 0%, #050812 70%)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px", position: "relative", overflow: "hidden" }}>
-      <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0 }}>
-        <div style={{ position: "absolute", top: "-120px", left: "15%", width: "550px", height: "550px", borderRadius: "50%", background: "radial-gradient(circle, rgba(14,165,233,0.14) 0%, transparent 65%)", filter: "blur(50px)" }} />
-        <div style={{ position: "absolute", bottom: "-100px", right: "15%", width: "500px", height: "500px", borderRadius: "50%", background: "radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 65%)", filter: "blur(50px)" }} />
+    <div className="relative min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col justify-center transition-colors">
+      {/* Floating Theme Toggle */}
+      <div className="fixed top-5 right-5 z-50">
+        <ThemeToggleButton />
       </div>
 
-      <div className="login-glass-container animate-fade-in">
-
-        {/* Left branding */}
-        <div className="login-left-brand">
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: "14px", marginBottom: "28px" }}>
-              <div style={{ width: "46px", height: "46px", borderRadius: "14px", background: "linear-gradient(135deg, #0EA5E9, #6366F1)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 8px 24px rgba(14,165,233,0.35)", border: "1px solid rgba(255,255,255,0.25)" }}>
-                <Heart style={{ width: "24px", height: "24px", color: "#ffffff" }} />
+      <div className="w-full flex-1 flex flex-col lg:flex-row">
+        {/* Left Column: Sign-in Form & Persona Matrix */}
+        <div className="flex-1 flex flex-col justify-center px-6 py-12 sm:px-12 lg:px-16 xl:px-24">
+          <div className="mx-auto w-full max-w-xl">
+            {/* Header Brand */}
+            <div className="flex items-center gap-3 mb-8">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-500 text-white shadow-theme-md">
+                <HeartPulse className="h-7 w-7" />
               </div>
               <div>
-                <div style={{ fontSize: "22px", fontWeight: "900", color: "#ffffff", letterSpacing: "-0.02em", lineHeight: 1.2 }}>K-DuraCare</div>
-                <div style={{ fontSize: "11px", color: "#38BDF8", fontWeight: "600", letterSpacing: "0.04em" }}>Kanakadurga Nursing Home</div>
-              </div>
-            </div>
-
-            <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "4px 12px", borderRadius: "9999px", background: "rgba(14,165,233,0.12)", border: "1px solid rgba(14,165,233,0.25)", marginBottom: "16px" }}>
-              <Sparkles style={{ width: "13px", height: "13px", color: "#38BDF8" }} />
-              <span style={{ fontSize: "11px", fontWeight: "700", color: "#7DD3FC", letterSpacing: "0.04em" }}>NEXT-GEN HOSPITAL INTELLIGENCE</span>
-            </div>
-
-            <h1 style={{ fontSize: "28px", fontWeight: "900", color: "#ffffff", lineHeight: 1.25, marginBottom: "14px", letterSpacing: "-0.02em" }}>
-              Workforce &amp; Operational{" "}
-              <span style={{ background: "linear-gradient(135deg, #38BDF8 0%, #818CF8 50%, #34D399 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Intelligence</span>
-            </h1>
-            <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.5)", lineHeight: 1.7, marginBottom: "24px" }}>Real-time CCTV telemetry, automated biometric rosters, statutory payroll compliance, and tamper-evident audit ledger.</p>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              {[
-                { icon: Sparkles, text: "Live CCTV Observational Telemetry",   color: "#38BDF8" },
-                { icon: Shield,   text: "Cryptographic SHA-256 Audit Trail",    color: "#34D399" },
-                { icon: Clock,    text: "Automated Shift & Overtime Payroll",   color: "#818CF8" },
-                { icon: Phone,    text: "2FA OTP Authentication Enabled",       color: "#FBBF24" },
-              ].map((feat, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 14px", borderRadius: "12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", fontSize: "12px", color: "rgba(255,255,255,0.75)" }}>
-                  <feat.icon style={{ width: "15px", height: "15px", color: feat.color, flexShrink: 0 }} />
-                  <span>{feat.text}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: "20px", borderTop: "1px solid rgba(255,255,255,0.08)", marginTop: "28px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <span className="live-dot" />
-              <span style={{ fontSize: "12px", color: "rgba(255,255,255,0.6)", fontWeight: "500" }}>Core Engine Online � 2FA Active</span>
-            </div>
-            <LiveClock />
-          </div>
-        </div>
-
-        {/* Right form */}
-        <div className="login-right-form">
-
-          {/* STEP 1 */}
-          {!otpStep && (
-            <>
-              <div style={{ marginBottom: "24px" }}>
-                <h2 style={{ fontSize: "24px", fontWeight: "800", color: "#ffffff", letterSpacing: "-0.02em", marginBottom: "6px" }}>System Sign-In</h2>
-                <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.45)" }}>Enter staff credentials. An OTP will be sent for 2FA verification.</p>
-              </div>
-
-              {error && (
-                <div style={{ padding: "12px 14px", borderRadius: "12px", background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.3)", color: "#F87171", fontSize: "12px", display: "flex", alignItems: "center", gap: "8px", marginBottom: "18px" }}>
-                  <Shield style={{ width: "16px", height: "16px", flexShrink: 0 }} /><span>{error}</span>
-                </div>
-              )}
-
-              <form onSubmit={handleCredentialSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                <div>
-                  <label className="input-label">
-                    <span>Staff Username / Email</span>
-                    <span style={{ fontSize: "10px", color: "rgba(255,255,255,0.35)", textTransform: "none" }}>e.g. admin@kduracare.in</span>
-                  </label>
-                  <div style={{ position: "relative" }}>
-                    <User className="input-icon-left" />
-                    <input type="text" value={email} onChange={e => setEmail(e.target.value)} className="input-field input-with-icon" placeholder="admin@kduracare.in" required />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="input-label">
-                    <span>Password</span>
-                    <span style={{ fontSize: "10px", color: "rgba(255,255,255,0.35)", textTransform: "none" }}>e.g. admin123</span>
-                  </label>
-                  <div style={{ position: "relative" }}>
-                    <Lock className="input-icon-left" />
-                    <input type={showPass ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} className="input-field input-with-icon" placeholder="��������" style={{ paddingRight: "42px" }} required />
-                    <button type="button" onClick={() => setShowPass(!showPass)} className="input-icon-right">
-                      {showPass ? <EyeOff style={{ width: "15px", height: "15px" }} /> : <Eye style={{ width: "15px", height: "15px" }} />}
-                    </button>
-                  </div>
-                </div>
-
-                <button type="submit" disabled={loading} className="btn-login-submit">
-                  {loading
-                    ? <><div className="animate-spin" style={{ width: "16px", height: "16px", border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#ffffff", borderRadius: "50%" }} /><span>Verifying...</span></>
-                    : <><span>Verify Credentials</span><ArrowRight style={{ width: "16px", height: "16px" }} /></>}
-                </button>
-              </form>
-
-              {/* Demo logins */}
-              <div style={{ marginTop: "24px", paddingTop: "20px", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px" }}>
-                  <span style={{ fontSize: "11px", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.07em", color: "rgba(255,255,255,0.6)", display: "flex", alignItems: "center", gap: "6px" }}>
-                    <Zap style={{ width: "13px", height: "13px", color: "#FBBF24" }} />Instant Demo Logins
-                  </span>
-                  <span style={{ fontSize: "10px", color: "rgba(255,255,255,0.35)" }}>Skips OTP</span>
-                </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
-                  {DEMO_ACCOUNTS.map(demo => (
-                    <button key={demo.role} type="button" onClick={() => handleQuickDemoLogin(demo)} className="demo-role-card"
-                      style={{ borderLeft: `3px solid ${demo.color}` }}
-                      onMouseEnter={e => e.currentTarget.style.boxShadow = `0 8px 24px ${demo.glow}`}
-                      onMouseLeave={e => e.currentTarget.style.boxShadow = "none"}>
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "3px" }}>
-                        <span style={{ fontSize: "12px", fontWeight: "700", color: demo.color }}>{demo.role}</span>
-                        <ArrowRight style={{ width: "12px", height: "12px", color: "rgba(255,255,255,0.4)" }} />
-                      </div>
-                      <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.85)", fontWeight: "500", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{demo.name}</div>
-                      <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.4)", fontFamily: "'JetBrains Mono', monospace", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{demo.email}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
-
-          {/* STEP 2 � OTP */}
-          {otpStep && (
-            <div className="animate-fade-in">
-              <div style={{ textAlign: "center", marginBottom: "28px" }}>
-                <div style={{ width: "64px", height: "64px", borderRadius: "20px", background: "linear-gradient(135deg, rgba(14,165,233,0.25), rgba(99,102,241,0.25))", border: "1px solid rgba(14,165,233,0.35)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
-                  <Phone style={{ width: "28px", height: "28px", color: "#38BDF8" }} />
-                </div>
-                <h2 style={{ fontSize: "22px", fontWeight: "800", color: "#ffffff", letterSpacing: "-0.02em", marginBottom: "8px" }}>2-Factor Verification</h2>
-                <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.45)", lineHeight: 1.6 }}>
-                  OTP dispatched to <strong style={{ color: "#38BDF8" }}>{pendingUser?.email}</strong>
+                <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white flex items-center gap-2">
+                  K-DuraCare
+                  <Badge color="primary" size="sm">
+                    v2.4
+                  </Badge>
+                </h1>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Hospital operations workspace
                 </p>
-                <div style={{ marginTop: "10px", display: "inline-flex", alignItems: "center", gap: "6px", padding: "4px 12px", borderRadius: "9999px", background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.2)" }}>
-                  <Sparkles style={{ width: "12px", height: "12px", color: "#FBBF24" }} />
-                  <span style={{ fontSize: "10px", fontWeight: "700", color: "#FCD34D", letterSpacing: "0.04em" }}>CHECK TOAST NOTIFICATION FOR OTP CODE</span>
-                </div>
-              </div>
-
-              <form onSubmit={handleOTPSubmit}>
-                <OTPInput value={otpInput} onChange={setOtpInput} />
-
-                {otpError && (
-                  <div style={{ marginTop: "14px", padding: "10px 14px", borderRadius: "10px", background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", color: "#F87171", fontSize: "12px", textAlign: "center" }}>
-                    {otpError}
-                  </div>
-                )}
-
-                <button type="submit" disabled={otpLoading || otpInput.length < 6} className="btn-login-submit" style={{ marginTop: "20px", opacity: otpInput.length < 6 ? 0.5 : 1 }}>
-                  {otpLoading
-                    ? <><div className="animate-spin" style={{ width: "16px", height: "16px", border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#ffffff", borderRadius: "50%" }} /><span>Verifying OTP...</span></>
-                    : <><CheckCircle2 style={{ width: "16px", height: "16px" }} /><span>Confirm &amp; Enter Workspace</span></>}
-                </button>
-              </form>
-
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "18px" }}>
-                <button type="button"
-                  onClick={() => { setOtpStep(false); setPendingUser(null); setOtpInput(""); setOtpError(""); }}
-                  style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>
-                  Back to Login
-                </button>
-                <button type="button" onClick={handleResend} disabled={resendCD > 0}
-                  style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "12px", color: resendCD > 0 ? "rgba(255,255,255,0.3)" : "#38BDF8", background: "none", border: "none", cursor: resendCD > 0 ? "default" : "pointer", fontWeight: 600 }}>
-                  <RefreshCw style={{ width: "13px", height: "13px" }} />
-                  {resendCD > 0 ? `Resend in ${resendCD}s` : "Resend OTP"}
-                </button>
-              </div>
-
-              <div style={{ marginTop: "20px", padding: "12px 14px", borderRadius: "12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", gap: "10px" }}>
-                <div style={{ width: "32px", height: "32px", borderRadius: "10px", background: "linear-gradient(135deg, #0EA5E9, #6366F1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "13px", fontWeight: 800, color: "#fff", flexShrink: 0 }}>
-                  {pendingUser?.avatar}
-                </div>
-                <div>
-                  <div style={{ fontSize: "13px", fontWeight: 700, color: "#fff" }}>{pendingUser?.name}</div>
-                  <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.4)" }}>{pendingUser?.title} � {pendingUser?.role}</div>
-                </div>
               </div>
             </div>
-          )}
 
-          <div style={{ textAlign: "center", marginTop: "20px", fontSize: "10px", color: "rgba(255,255,255,0.25)" }}>
-            Kanakadurga Nursing Home � NABH Digital Records v2.4 � 2FA Enabled
+            {/* Title */}
+            <div className="mb-6">
+              <h2 className="text-xl font-bold text-gray-800 dark:text-white/90">
+                Secure sign in
+              </h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                Sign in to access your authorised clinical or operational workspace.
+              </p>
+            </div>
+
+            {/* Login Form */}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
+                  Hospital ID / Email <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <input
+                    type="text"
+                    value={identifier}
+                    onChange={(e) => setIdentifier(e.target.value)}
+                    placeholder="e.g. admin@kduracare.in or doctor"
+                    required
+                    className="tail-input pl-10"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
+                    Security Password <span className="text-rose-500">*</span>
+                  </label>
+                  <span className="text-[11px] text-brand-500 dark:text-brand-400">
+                    Demo pass: admin123
+                  </span>
+                </div>
+                <div className="relative">
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter password"
+                    required
+                    className="tail-input pl-10 pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((p) => !p)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <Button
+                type="submit"
+                variant="primary"
+                size="lg"
+                disabled={loading}
+                className="w-full mt-2"
+                endIcon={<ArrowRight className="h-4 w-4" />}
+              >
+                {loading ? 'Authenticating...' : 'Sign In to Workspace'}
+              </Button>
+            </form>
+
+            {/* Divider */}
+            <div className="relative my-8">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-200 dark:border-gray-800" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-gray-50 dark:bg-gray-900 px-3 font-semibold text-gray-400 dark:text-gray-500">
+                  Presentation personas
+                </span>
+              </div>
+            </div>
+
+            {/* Categorized Demo Role Selector Tabs */}
+            <div className="space-y-4">
+              <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar border-b border-gray-200 dark:border-gray-800">
+                {CATEGORIZED_DEMO_USERS.map((cat) => (
+                  <button
+                    key={cat.category}
+                    type="button"
+                    onClick={() => setActiveCategory(cat.category)}
+                    className={`whitespace-nowrap pb-2 text-xs font-semibold transition-colors border-b-2 px-1 ${
+                      activeCategory === cat.category
+                        ? 'border-brand-500 text-brand-600 dark:text-brand-400'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                    }`}
+                  >
+                    {cat.category}
+                  </button>
+                ))}
+              </div>
+
+              {/* Roles in selected category */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {CATEGORIZED_DEMO_USERS.find((c) => c.category === activeCategory)?.roles.map(
+                  (roleItem) => (
+                    <button
+                      key={roleItem.id}
+                      type="button"
+                      onClick={() => handleDemoSelect(roleItem.email)}
+                      className="group flex items-center justify-between p-3 rounded-xl border border-gray-200 bg-white hover:border-brand-300 hover:bg-brand-50/40 dark:border-gray-800 dark:bg-gray-800/40 dark:hover:border-brand-500/40 dark:hover:bg-brand-500/5 transition-all text-left"
+                    >
+                      <div className="flex flex-col truncate pr-2">
+                        <span className="text-xs font-bold text-gray-800 dark:text-white truncate group-hover:text-brand-600 dark:group-hover:text-brand-400">
+                          {roleItem.role}
+                        </span>
+                        <span className="text-[11px] text-gray-500 dark:text-gray-400 truncate">
+                          {roleItem.name} · {roleItem.title}
+                        </span>
+                      </div>
+                      <Badge color={roleItem.color} size="sm">
+                        Login
+                      </Badge>
+                    </button>
+                  )
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
+        {/* Right Column: Hospital product narrative */}
+        <div className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12 bg-brand-950 dark:bg-white/[0.02] border-l border-gray-200 dark:border-gray-800 relative overflow-hidden text-white">
+          {/* Subtle grid pattern background */}
+          <div
+            className="absolute inset-0 opacity-10 pointer-events-none"
+            style={{
+              backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)',
+              backgroundSize: '24px 24px',
+            }}
+          />
+
+          <div className="relative z-10 flex items-center justify-between">
+            <span className="text-xs font-semibold tracking-widest uppercase text-brand-300">
+              Kanakadurga Nursing Home
+            </span>
+            <Badge color="success" size="sm">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 mr-1 animate-pulse" />
+              NABH COMPLIANT 2026
+            </Badge>
+          </div>
+
+          <div className="relative z-10 my-auto max-w-md">
+            <div className="inline-flex p-3 rounded-2xl bg-white/10 backdrop-blur-md mb-6 border border-white/10">
+              <Sparkles className="h-8 w-8 text-brand-400" />
+            </div>
+
+            <h2 className="text-3xl font-extrabold tracking-tight text-white mb-4 leading-tight">
+              One operational view for the entire hospital.
+            </h2>
+
+            <p className="text-sm text-gray-300 leading-relaxed mb-6">
+              A role-based workspace for safe staffing, attendance, facility readiness and
+              clinical coordination—built to help each team act on what matters now.
+            </p>
+
+            {/* Quick Metrics highlight */}
+            <div className="grid grid-cols-3 gap-4 pt-6 border-t border-white/10">
+              <div>
+                <span className="block text-2xl font-bold text-white">326</span>
+                <span className="text-xs text-gray-400">Total Enrolled Staff</span>
+              </div>
+              <div>
+                <span className="block text-2xl font-bold text-emerald-400">93%</span>
+                <span className="text-xs text-gray-400">ICU Shift Coverage</span>
+              </div>
+              <div>
+                <span className="block text-2xl font-bold text-brand-400">12</span>
+                <span className="text-xs text-gray-400">Monitored locations</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="relative z-10 text-xs text-gray-400 flex items-center justify-between">
+            <span>© 2026 Kanakadurga Nursing Home</span>
+            <span>Role-based access · simulated data</span>
+          </div>
+        </div>
       </div>
     </div>
   );

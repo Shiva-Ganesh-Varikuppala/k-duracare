@@ -1,6 +1,12 @@
 import { useState, useEffect } from 'react';
-import { ScrollText, Search, Filter, ShieldCheck, AlertCircle, Sparkles, Download, CheckCircle, XCircle, RefreshCw, Eye, Hash, Shield, Lock, Activity, Terminal, ArrowUpRight, Copy } from 'lucide-react';
+import {
+  ScrollText, Search, Filter, ShieldCheck, AlertCircle, Download,
+  CheckCircle, XCircle, Eye, Hash, Shield, Lock, Activity, Terminal, Copy, X
+} from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import PageBreadcrumb from '../components/common/PageBreadcrumb';
+import Badge from '../components/ui/badge/Badge';
+import Button from '../components/ui/button/Button';
 
 const INITIAL_LOGS = [
   { id: 'AL-9082', timestamp: '2026-09-22 16:21:04', user: 'admin', role: 'Super Administrator', action: 'Biometric Template Synced', resource: 'BIO-ICU-04 (Terminal)', ip: '192.168.1.10', status: 'Success', category: 'Hardware', sha: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', details: 'Template version v3.4 synced to 18 bedside biometric scanners.' },
@@ -14,11 +20,11 @@ const INITIAL_LOGS = [
 ];
 
 export default function AuditLogs() {
-  const [logs, setLogs] = useState(INITIAL_LOGS);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [logs, setLogs]                 = useState(INITIAL_LOGS);
+  const [searchTerm, setSearchTerm]     = useState('');
   const [actionFilter, setActionFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
-  const [selectedLog, setSelectedLog] = useState(null);
+  const [selectedLog, setSelectedLog]   = useState(null);
   const [isLiveStream, setIsLiveStream] = useState(true);
 
   // Live streaming simulation
@@ -35,7 +41,7 @@ export default function AuditLogs() {
       const now = new Date();
       const timeStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
       const randomHash = Array.from({length: 64}, () => Math.floor(Math.random()*16).toString(16)).join('');
-      
+
       const newEntry = {
         id: `AL-${Math.floor(9090 + Math.random() * 900)}`,
         timestamp: timeStr,
@@ -81,213 +87,172 @@ export default function AuditLogs() {
   };
 
   return (
-    <div className="space-y-6 pb-12 animate-fade-in">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-sky-500/20 to-teal-500/20 border border-sky-400/30 flex items-center justify-center shadow-lg shadow-sky-500/10">
-              <ScrollText className="w-5 h-5 text-sky-400" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-white flex items-center gap-2.5">
-                Immutable System Audit Trail
-                <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center gap-1 font-mono">
-                  <Lock className="w-3 h-3" /> SHA-256 Chained
-                </span>
-              </h1>
-              <p className="text-sm text-slate-400 mt-0.5">
-                Cryptographically sealed append-only logbook · NABH Digital Records & AP Medical Council Section 7 Compliance
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <button
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <PageBreadcrumb
+          pageTitle="Immutable System Audit Trail"
+          breadcrumbs={[
+            { label: 'Governance', path: '/audit-logs' },
+            { label: 'Audit Trail' }
+          ]}
+        />
+        <div className="flex items-center gap-2.5">
+          <Button
+            variant={isLiveStream ? "success" : "outline"}
+            size="sm"
             onClick={() => {
               setIsLiveStream(!isLiveStream);
               toast.success(isLiveStream ? 'Live stream paused' : 'Live stream activated');
             }}
-            className={`px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border transition-all duration-300 ${
-              isLiveStream 
-                ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30 shadow-lg shadow-emerald-500/10' 
-                : 'bg-slate-800/80 text-slate-400 border-slate-700/60'
-            }`}
           >
-            <span className={`w-2 h-2 rounded-full ${isLiveStream ? 'bg-emerald-400 animate-ping' : 'bg-slate-500'}`} />
-            {isLiveStream ? 'Live Stream Active' : 'Stream Paused'}
-          </button>
+            <span className={`w-2 h-2 rounded-full mr-1.5 ${isLiveStream ? 'bg-white animate-ping' : 'bg-gray-400'}`} />
+            {isLiveStream ? 'Live Ingestion' : 'Stream Paused'}
+          </Button>
 
-          <button
+          <Button
+            variant="outline"
+            size="sm"
+            startIcon={<Download className="w-4 h-4" />}
             onClick={handleExportCSV}
-            className="btn-primary text-xs"
           >
-            <Download className="w-3.5 h-3.5" /> Export Signed CSV
-          </button>
+            Export Signed CSV
+          </Button>
         </div>
       </div>
 
-      {/* Audit Stats in Liquid Glass Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          { label: 'Total Events Logged', value: '14,896', sub: 'SHA-256 Merkle verified', icon: ShieldCheck, color: 'text-sky-400', border: 'border-sky-500/30', bg: 'bg-sky-500/10' },
-          { label: "Today's Events", value: logs.length + 420, sub: 'Workforce, CCTV, Payroll', icon: Activity, color: 'text-teal-400', border: 'border-teal-500/30', bg: 'bg-teal-500/10' },
-          { label: 'Security Exceptions', value: '1', sub: 'Brute force gateway block', icon: AlertCircle, color: 'text-amber-400', border: 'border-amber-500/30', bg: 'bg-amber-500/10' },
-          { label: 'Cryptographic Integrity', value: '100%', sub: 'Zero tampering detected', icon: Lock, color: 'text-emerald-400', border: 'border-emerald-500/30', bg: 'bg-emerald-500/10' },
+          { label: 'Total Events Logged', value: '14,896', sub: 'SHA-256 Merkle verified', icon: ShieldCheck, color: 'text-brand-600 dark:text-brand-400' },
+          { label: "Today's Events", value: logs.length + 420, sub: 'Workforce, CCTV, Payroll', icon: Activity, color: 'text-emerald-600 dark:text-emerald-400' },
+          { label: 'Security Exceptions', value: '1', sub: 'Brute force gateway block', icon: AlertCircle, color: 'text-rose-600 dark:text-rose-400' },
+          { label: 'Cryptographic Integrity', value: '100%', sub: 'Zero tampering detected', icon: Lock, color: 'text-purple-600 dark:text-purple-400' },
         ].map((m, idx) => (
-          <div key={idx} className={`glass-card p-5 border ${m.border} relative overflow-hidden group hover:scale-[1.02] transition-all duration-300`}>
-            <div className="absolute -top-12 -right-12 w-28 h-28 rounded-full bg-sky-500/5 blur-2xl group-hover:bg-sky-500/10 transition-colors pointer-events-none" />
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs text-slate-400 font-medium">{m.label}</span>
-              <div className={`w-8 h-8 rounded-xl ${m.bg} flex items-center justify-center border border-white/5`}>
-                <m.icon className={`w-4 h-4 ${m.color}`} />
+          <div key={idx} className="rounded-2xl border border-gray-200 bg-white p-4 shadow-xs dark:border-gray-800 dark:bg-white/[0.03]">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{m.label}</span>
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-50 text-gray-600 dark:bg-white/[0.04] dark:text-gray-300">
+                <m.icon className="w-4 h-4" />
               </div>
             </div>
-            <p className={`text-3xl font-extrabold ${m.color}`}>{m.value}</p>
-            <p className="text-[11px] text-slate-500 mt-1 flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> {m.sub}
+            <p className={`text-2xl sm:text-3xl font-bold font-mono ${m.color}`}>{m.value}</p>
+            <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> {m.sub}
             </p>
           </div>
         ))}
       </div>
 
-      {/* Filters and Search Bar */}
-      <div className="glass-card p-4 flex flex-wrap items-center justify-between gap-3 border border-slate-700/60 rounded-2xl">
-        <div className="relative flex-1 min-w-[260px]">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+      {/* Filter and Search Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="relative flex-1 min-w-[240px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             type="text"
             placeholder="Search by initiator, action, resource, hash, or IP..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
-            className="input-field pl-10 text-xs w-full bg-slate-900/60 border-slate-700/70 focus:border-sky-500/60"
+            className="input-field pl-9 text-xs"
           />
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex items-center gap-1.5 text-xs text-slate-400 mr-1">
-            <Filter className="w-3.5 h-3.5" /> Category:
-          </div>
+        <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-gray-200 bg-gray-100 p-1.5 dark:border-gray-800 dark:bg-gray-900/60 w-fit">
           {['All', 'Workforce', 'Leave', 'Payroll', 'Security', 'Hardware', 'Shifts'].map(cat => (
             <button
               key={cat}
               onClick={() => setActionFilter(cat)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
                 actionFilter === cat
-                  ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40 shadow-sm'
-                  : 'bg-slate-800/40 text-slate-400 hover:text-slate-200 border border-transparent'
+                  ? 'bg-white text-brand-600 shadow-xs dark:bg-brand-500 dark:text-white'
+                  : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
               }`}
             >
               {cat}
             </button>
           ))}
-
-          <select
-            value={statusFilter}
-            onChange={e => setStatusFilter(e.target.value)}
-            className="input-field text-xs py-1.5 px-3 bg-slate-900/60 border-slate-700/70"
-          >
-            <option value="All">All Statuses</option>
-            <option value="Success">Success Only</option>
-            <option value="Failed">Failed Only</option>
-          </select>
         </div>
+
+        <select
+          value={statusFilter}
+          onChange={e => setStatusFilter(e.target.value)}
+          className="input-field text-xs py-1.5 w-auto"
+        >
+          <option value="All">All Statuses</option>
+          <option value="Success">Success Only</option>
+          <option value="Failed">Failed Only</option>
+        </select>
       </div>
 
-      {/* Audit Log Table in Liquid Glass Container */}
-      <div className="glass-card overflow-hidden rounded-2xl border border-slate-700/60 shadow-xl">
-        <div className="p-4 border-b border-slate-700/50 flex items-center justify-between bg-slate-900/30">
-          <div className="flex items-center gap-2 text-xs font-medium text-slate-300">
-            <Terminal className="w-4 h-4 text-sky-400" />
-            <span>Showing {filteredLogs.length} events (Sorted in reverse chronological sequence)</span>
+      {/* Audit Log Table */}
+      <div className="rounded-2xl border border-gray-200 bg-white shadow-xs overflow-hidden dark:border-gray-800 dark:bg-white/[0.03]">
+        <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-xs font-medium text-gray-600 dark:text-gray-300">
+            <Terminal className="w-4 h-4 text-brand-500" />
+            <span>Showing {filteredLogs.length} events in chronological order</span>
           </div>
-          <span className="text-[11px] text-slate-500 font-mono">Blockchain Hash Block #89217</span>
+          <span className="text-[11px] text-gray-400 font-mono">Merkle Block #89217</span>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left">
+          <table className="w-full border-collapse text-sm">
             <thead>
-              <tr className="bg-slate-900/60 border-b border-slate-700/50 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                <th className="py-3 px-4">Event ID / Hash</th>
-                <th className="py-3 px-4">Timestamp</th>
-                <th className="py-3 px-4">Initiator</th>
-                <th className="py-3 px-4">Category</th>
-                <th className="py-3 px-4">Action</th>
-                <th className="py-3 px-4">Target Resource</th>
-                <th className="py-3 px-4">Host IP</th>
-                <th className="py-3 px-4 text-center">Status</th>
-                <th className="py-3 px-4 text-right">Inspect</th>
+              <tr className="border-b border-gray-200 bg-gray-50/50 dark:border-gray-800 dark:bg-white/[0.02]">
+                <th className="table-header">Event ID / Hash</th>
+                <th className="table-header">Timestamp</th>
+                <th className="table-header">Initiator</th>
+                <th className="table-header">Category</th>
+                <th className="table-header">Action</th>
+                <th className="table-header">Target Resource</th>
+                <th className="table-header">IP Address</th>
+                <th className="table-header text-center">Status</th>
+                <th className="table-header text-right">Inspect</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60 text-xs">
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
               {filteredLogs.map(log => (
                 <tr
                   key={log.id}
                   onClick={() => setSelectedLog(log)}
-                  className="hover:bg-slate-800/40 transition-colors group cursor-pointer"
+                  className="table-row cursor-pointer"
                 >
-                  <td className="py-3 px-4 font-mono text-[11px]">
-                    <div className="flex items-center gap-1.5 font-bold text-sky-400">
-                      <Hash className="w-3 h-3 text-slate-500" />
-                      {log.id}
-                    </div>
-                    <div className="text-[9px] text-slate-500 font-mono truncate max-w-[120px]">
-                      {log.sha.slice(0, 14)}...
-                    </div>
+                  <td className="table-cell font-mono text-xs">
+                    <span className="font-bold text-brand-600 dark:text-brand-400">{log.id}</span>
+                    <span className="block text-[10px] text-gray-400 truncate max-w-[110px]">{log.sha.slice(0, 12)}...</span>
                   </td>
-
-                  <td className="py-3 px-4 font-mono text-slate-300 text-[11px] whitespace-nowrap">
+                  <td className="table-cell font-mono text-xs text-gray-600 dark:text-gray-400 whitespace-nowrap">
                     {log.timestamp}
                   </td>
-
-                  <td className="py-3 px-4">
-                    <div className="font-semibold text-white group-hover:text-sky-300 transition-colors">
-                      {log.user}
-                    </div>
-                    <div className="text-[10px] text-slate-400">{log.role}</div>
+                  <td className="table-cell">
+                    <p className="font-semibold text-gray-900 dark:text-white text-xs">{log.user}</p>
+                    <p className="text-[10px] text-gray-400">{log.role}</p>
                   </td>
-
-                  <td className="py-3 px-4">
-                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-slate-800/80 text-slate-300 border border-slate-700/60">
-                      {log.category}
-                    </span>
+                  <td className="table-cell">
+                    <Badge variant="light" color="light" size="sm">{log.category}</Badge>
                   </td>
-
-                  <td className="py-3 px-4 font-medium text-slate-200">
+                  <td className="table-cell font-medium text-gray-800 dark:text-gray-200 text-xs">
                     {log.action}
                   </td>
-
-                  <td className="py-3 px-4 font-mono text-slate-400 text-[11px]">
+                  <td className="table-cell font-mono text-xs text-gray-500 dark:text-gray-400">
                     {log.resource}
                   </td>
-
-                  <td className="py-3 px-4 font-mono text-slate-400 text-[11px]">
+                  <td className="table-cell font-mono text-xs text-gray-500 dark:text-gray-400">
                     {log.ip}
                   </td>
-
-                  <td className="py-3 px-4 text-center">
-                    <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1 ${
-                      log.status === 'Success'
-                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                        : 'bg-red-500/20 text-red-400 border border-red-500/30'
-                    }`}>
-                      {log.status === 'Success' ? <CheckCircle className="w-2.5 h-2.5" /> : <XCircle className="w-2.5 h-2.5" />}
+                  <td className="table-cell text-center">
+                    <Badge variant="light" color={log.status === 'Success' ? 'success' : 'error'} size="sm">
                       {log.status}
-                    </span>
+                    </Badge>
                   </td>
-
-                  <td className="py-3 px-4 text-right">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedLog(log);
-                      }}
-                      className="p-1.5 rounded-lg bg-slate-800/60 hover:bg-sky-500/20 text-slate-400 hover:text-sky-300 border border-slate-700/50 transition-colors"
-                      title="Inspect Log Entry"
+                  <td className="table-cell text-right">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="px-2 py-1"
+                      onClick={e => { e.stopPropagation(); setSelectedLog(log); }}
                     >
                       <Eye className="w-3.5 h-3.5" />
-                    </button>
+                    </Button>
                   </td>
                 </tr>
               ))}
@@ -298,83 +263,79 @@ export default function AuditLogs() {
 
       {/* Log Detail Inspector Modal */}
       {selectedLog && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
-          <div className="glass-card max-w-2xl w-full p-6 border border-slate-700/80 rounded-2xl shadow-2xl relative space-y-5">
-            <div className="flex items-center justify-between border-b border-slate-700/60 pb-4">
+        <div className="modal-overlay" onClick={() => setSelectedLog(null)}>
+          <div className="modal-glass max-w-xl" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-gray-800">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-sky-500/15 border border-sky-500/30 flex items-center justify-center">
-                  <Shield className="w-5 h-5 text-sky-400" />
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400">
+                  <Shield className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                    Audit Event Inspector · {selectedLog.id}
+                  <h3 className="text-base font-bold text-gray-900 dark:text-white">
+                    Audit Event · {selectedLog.id}
                   </h3>
-                  <p className="text-xs text-slate-400 font-mono">{selectedLog.timestamp}</p>
+                  <p className="font-mono text-xs text-gray-500 dark:text-gray-400">{selectedLog.timestamp}</p>
                 </div>
               </div>
-              <button
-                onClick={() => setSelectedLog(null)}
-                className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/60 transition-colors"
-              >
-                ✕
+              <button onClick={() => setSelectedLog(null)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1">
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 text-xs">
-              <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
-                <span className="text-slate-500 block mb-1">Initiator & Role</span>
-                <span className="font-bold text-white text-sm">{selectedLog.user}</span>
-                <span className="text-slate-400 block mt-0.5">{selectedLog.role}</span>
+            <div className="mt-4 space-y-4">
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div className="rounded-xl border border-gray-100 bg-gray-50/60 p-3 dark:border-gray-800 dark:bg-white/[0.02]">
+                  <span className="text-gray-400 block text-[10px] uppercase font-semibold mb-1">Initiator & Role</span>
+                  <p className="font-bold text-gray-900 dark:text-white text-sm">{selectedLog.user}</p>
+                  <p className="text-gray-500 dark:text-gray-400 mt-0.5">{selectedLog.role}</p>
+                </div>
+                <div className="rounded-xl border border-gray-100 bg-gray-50/60 p-3 dark:border-gray-800 dark:bg-white/[0.02]">
+                  <span className="text-gray-400 block text-[10px] uppercase font-semibold mb-1">Target Resource</span>
+                  <p className="font-mono font-bold text-brand-600 dark:text-brand-400 text-sm">{selectedLog.resource}</p>
+                  <p className="text-gray-500 dark:text-gray-400 mt-0.5">Category: {selectedLog.category}</p>
+                </div>
               </div>
-              <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
-                <span className="text-slate-500 block mb-1">Target Resource</span>
-                <span className="font-bold text-sky-300 font-mono text-sm">{selectedLog.resource}</span>
-                <span className="text-slate-400 block mt-0.5">Category: {selectedLog.category}</span>
-              </div>
-            </div>
 
-            <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-400 font-medium">Event Description & Telemetry</span>
-                <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
-                  selectedLog.status === 'Success' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'
-                }`}>
-                  {selectedLog.status}
-                </span>
+              <div className="rounded-xl border border-gray-100 bg-gray-50/60 p-3.5 text-xs dark:border-gray-800 dark:bg-white/[0.02]">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="font-semibold text-gray-700 dark:text-gray-300">Action Telemetry</span>
+                  <Badge variant="light" color={selectedLog.status === 'Success' ? 'success' : 'error'} size="sm">
+                    {selectedLog.status}
+                  </Badge>
+                </div>
+                <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+                  {selectedLog.details || `${selectedLog.action} executed against ${selectedLog.resource}. Verified by internal policy engine.`}
+                </p>
               </div>
-              <p className="text-xs text-slate-300 leading-relaxed font-sans">
-                {selectedLog.details || `${selectedLog.action} executed against ${selectedLog.resource}. Verified by internal policy engine.`}
-              </p>
-            </div>
 
-            <div className="p-3.5 rounded-xl bg-slate-950/80 border border-sky-500/20 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-mono text-slate-400 flex items-center gap-1.5">
-                  <Lock className="w-3.5 h-3.5 text-sky-400" /> Cryptographic SHA-256 Hash Digest
-                </span>
-                <button
-                  onClick={() => copyToClipboard(selectedLog.sha, 'SHA-256 Hash')}
-                  className="text-[11px] text-sky-400 hover:text-sky-300 flex items-center gap-1 font-mono"
-                >
-                  <Copy className="w-3 h-3" /> Copy Hash
-                </button>
+              <div className="rounded-xl border border-brand-200 bg-brand-50/40 p-3.5 dark:border-brand-500/20 dark:bg-brand-500/10">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-mono font-semibold text-brand-700 dark:text-brand-300 flex items-center gap-1.5">
+                    <Lock className="w-3.5 h-3.5" /> SHA-256 Cryptographic Hash
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs text-brand-600 dark:text-brand-400"
+                    onClick={() => copyToClipboard(selectedLog.sha, 'SHA-256 Hash')}
+                  >
+                    <Copy className="w-3 h-3 mr-1" /> Copy
+                  </Button>
+                </div>
+                <p className="font-mono text-[11px] text-brand-900 dark:text-brand-200 break-all select-all">
+                  {selectedLog.sha}
+                </p>
               </div>
-              <p className="text-[11px] font-mono text-sky-300/90 break-all bg-slate-900/80 p-2.5 rounded-lg border border-slate-800 select-all">
-                {selectedLog.sha}
-              </p>
-            </div>
 
-            <div className="flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-800">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-emerald-400" />
-                <span>Certificate Validity: Signed by K-DuraCare Root Authority</span>
+              <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-800 text-xs">
+                <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
+                  <CheckCircle className="w-4 h-4" />
+                  <span>Valid Signature: K-DuraCare Root Authority</span>
+                </div>
+                <Button variant="primary" size="sm" onClick={() => setSelectedLog(null)}>
+                  Close
+                </Button>
               </div>
-              <button
-                onClick={() => setSelectedLog(null)}
-                className="btn-primary text-xs px-4 py-2"
-              >
-                Close Inspector
-              </button>
             </div>
           </div>
         </div>

@@ -1,6 +1,9 @@
 import { useState } from 'react';
-import { Bell, AlertTriangle, CheckCircle, Info, X, ExternalLink, Filter } from 'lucide-react';
+import { Bell, AlertTriangle, Info, X, ExternalLink } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import PageBreadcrumb from '../components/common/PageBreadcrumb';
+import Badge from '../components/ui/badge/Badge';
+import Button from '../components/ui/button/Button';
 
 const NOTIFICATIONS = [
   { id: 1, type: 'critical', title: 'Fall Event Detected — ICU',          message: 'AI detected a possible fall event in ICU Room 3. Paramedic team alerted. Please review CCTV footage immediately.', time: '2 min ago', cam: 'CAM-ICU-03', link: '/monitor', read: false },
@@ -16,152 +19,146 @@ const NOTIFICATIONS = [
 ];
 
 const TYPE_CFG = {
-  critical: { color: '#F87171', bg: 'rgba(239,68,68,0.1)',   border: 'rgba(239,68,68,0.2)',   label: 'Critical', dotColor: '#F87171' },
-  high:     { color: '#FB923C', bg: 'rgba(249,115,22,0.1)',  border: 'rgba(249,115,22,0.2)',  label: 'High',     dotColor: '#FB923C' },
-  medium:   { color: '#FBBF24', bg: 'rgba(245,158,11,0.1)', border: 'rgba(245,158,11,0.2)', label: 'Medium',   dotColor: '#FBBF24' },
-  info:     { color: '#38BDF8', bg: 'rgba(14,165,233,0.1)', border: 'rgba(14,165,233,0.2)', label: 'Info',     dotColor: '#38BDF8' },
+  critical: { badgeColor: 'error',   label: 'Critical', Icon: AlertTriangle, iconClass: 'text-red-500 dark:text-red-400',   borderClass: 'border-l-red-500',    bgClass: 'bg-red-50 dark:bg-red-500/[0.06]' },
+  high:     { badgeColor: 'warning', label: 'High',     Icon: AlertTriangle, iconClass: 'text-orange-500 dark:text-orange-400', borderClass: 'border-l-orange-400', bgClass: 'bg-orange-50 dark:bg-orange-500/[0.06]' },
+  medium:   { badgeColor: 'warning', label: 'Medium',   Icon: Bell,          iconClass: 'text-yellow-500 dark:text-yellow-400', borderClass: 'border-l-yellow-400', bgClass: '' },
+  info:     { badgeColor: 'info',    label: 'Info',     Icon: Info,          iconClass: 'text-blue-500 dark:text-blue-400',  borderClass: 'border-l-blue-400',   bgClass: '' },
 };
 
-const TYPE_ICON = {
-  critical: AlertTriangle,
-  high:     AlertTriangle,
-  medium:   Bell,
-  info:     Info,
-};
+const TABS = ['All', 'Unread', 'critical', 'high', 'medium', 'info'];
 
 export default function Notifications() {
   const [notifs, setNotifs] = useState(NOTIFICATIONS);
   const [filter, setFilter] = useState('All');
 
   const unread = notifs.filter(n => !n.read).length;
-  const filtered = notifs.filter(n => filter === 'All' || n.type === filter || (filter === 'Unread' && !n.read));
+  const filtered = notifs.filter(n => {
+    if (filter === 'All') return true;
+    if (filter === 'Unread') return !n.read;
+    return n.type === filter;
+  });
 
-  const markRead = (id) => setNotifs(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+  const markRead    = (id) => setNotifs(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
   const markAllRead = () => { setNotifs(prev => prev.map(n => ({ ...n, read: true }))); toast.success('All notifications marked as read'); };
-  const dismiss = (id) => { setNotifs(prev => prev.filter(n => n.id !== id)); };
+  const dismiss     = (id) => { setNotifs(prev => prev.filter(n => n.id !== id)); };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-start justify-between flex-wrap gap-4">
-        <div>
-          <h1 style={{ fontSize: 26, fontWeight: 900, color: '#fff', letterSpacing: '-0.04em' }}>
-            Notifications
-          </h1>
-          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', marginTop: 4 }}>
-            {unread > 0 ? `${unread} unread alert${unread > 1 ? 's' : ''} require your attention` : 'All notifications are read'}
-          </p>
-        </div>
-        {unread > 0 && (
-          <button className="btn-secondary" style={{ fontSize: 12 }} onClick={markAllRead}>
-            <CheckCircle style={{ width: 14, height: 14 }} /> Mark all read
-          </button>
-        )}
-      </div>
+      <PageBreadcrumb
+        pageTitle="Notifications"
+        breadcrumbs={[{ label: 'Dashboard', path: '/' }, { label: 'Notifications' }]}
+      />
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      {/* Stats row */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: 'Critical', value: notifs.filter(n => n.type === 'critical').length, color: '#F87171' },
-          { label: 'High Priority', value: notifs.filter(n => n.type === 'high').length, color: '#FB923C' },
-          { label: 'Medium', value: notifs.filter(n => n.type === 'medium').length, color: '#FBBF24' },
-          { label: 'Unread', value: unread, color: '#38BDF8' },
-        ].map(item => (
-          <div key={item.label} className="glass-card" style={{ padding: '16px 20px', textAlign: 'center' }}>
-            <p style={{ fontSize: 28, fontWeight: 800, color: item.color, letterSpacing: '-0.04em' }}>{item.value}</p>
-            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 4 }}>{item.label}</p>
+          { label: 'Total', value: notifs.length, color: 'text-gray-800 dark:text-white' },
+          { label: 'Unread', value: unread, color: 'text-brand-500' },
+          { label: 'Critical / High', value: notifs.filter(n => n.type === 'critical' || n.type === 'high').length, color: 'text-error-500' },
+          { label: 'Info', value: notifs.filter(n => n.type === 'info').length, color: 'text-blue-500' },
+        ].map(stat => (
+          <div key={stat.label} className="rounded-2xl border border-gray-200 bg-white p-5 text-center shadow-xs dark:border-gray-800 dark:bg-white/[0.03]">
+            <p className={`text-3xl font-extrabold ${stat.color}`}>{stat.value}</p>
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{stat.label}</p>
           </div>
         ))}
       </div>
 
-      {/* Filters */}
-      <div className="tab-bar">
-        {['All', 'Unread', 'critical', 'high', 'medium', 'info'].map(f => (
-          <button key={f} className={filter === f ? 'tab-active' : 'tab-item'} onClick={() => setFilter(f)}>
-            {f === 'All' ? 'All' : f === 'Unread' ? `Unread (${unread})` : f.charAt(0).toUpperCase() + f.slice(1)}
-          </button>
-        ))}
+      {/* Filters + actions */}
+      <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-xs dark:border-gray-800 dark:bg-white/[0.03]">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap gap-2">
+            {TABS.map(tab => (
+              <button
+                key={tab}
+                onClick={() => setFilter(tab)}
+                className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors ${
+                  filter === tab
+                    ? 'bg-brand-500 text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-white/[0.05] dark:text-gray-300 dark:hover:bg-white/[0.08]'
+                }`}
+              >
+                {tab === 'All' ? 'All' : tab === 'Unread' ? `Unread (${unread})` : tab.charAt(0).toUpperCase() + tab.slice(1)}
+              </button>
+            ))}
+          </div>
+          <Button variant="outline" size="sm" onClick={markAllRead} disabled={unread === 0}>
+            Mark all read
+          </Button>
+        </div>
       </div>
 
-      {/* Notification List */}
+      {/* Notification list */}
       <div className="space-y-3">
+        {filtered.length === 0 && (
+          <div className="rounded-2xl border border-gray-200 bg-white p-12 text-center shadow-xs dark:border-gray-800 dark:bg-white/[0.03]">
+            <Bell className="mx-auto mb-3 h-10 w-10 text-gray-300 dark:text-gray-600" />
+            <p className="text-sm font-semibold text-gray-500 dark:text-gray-400">No notifications here</p>
+            <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">Try a different filter</p>
+          </div>
+        )}
+
         {filtered.map(notif => {
           const cfg = TYPE_CFG[notif.type] || TYPE_CFG.info;
-          const Icon = TYPE_ICON[notif.type] || Bell;
+          const Icon = cfg.Icon;
           return (
             <div
               key={notif.id}
               onClick={() => markRead(notif.id)}
-              style={{
-                background: notif.read ? 'rgba(255,255,255,0.04)' : `${cfg.bg}`,
-                border: `1px solid ${notif.read ? 'rgba(255,255,255,0.07)' : cfg.border}`,
-                borderRadius: 16, padding: '18px 22px',
-                cursor: 'pointer', transition: 'all 0.2s ease',
-                position: 'relative', overflow: 'hidden',
-              }}
-              onMouseEnter={e => e.currentTarget.style.transform = 'translateX(3px)'}
-              onMouseLeave={e => e.currentTarget.style.transform = 'translateX(0)'}
+              className={`relative cursor-pointer rounded-2xl border border-l-4 bg-white shadow-xs transition-all hover:shadow-md dark:bg-white/[0.03] ${cfg.borderClass} ${notif.read ? 'border-gray-200 dark:border-gray-800 opacity-70' : 'border-gray-200 dark:border-gray-800'} ${cfg.bgClass}`}
             >
-              {/* Unread indicator */}
-              {!notif.read && (
-                <div style={{
-                  position: 'absolute', left: 0, top: 0, bottom: 0, width: 3,
-                  background: `linear-gradient(180deg, ${cfg.color}, ${cfg.color}60)`,
-                  borderRadius: '16px 0 0 16px',
-                }} />
-              )}
+              <div className="flex items-start gap-4 p-4">
+                {/* Unread dot */}
+                {!notif.read && (
+                  <span className="absolute right-4 top-4 h-2 w-2 rounded-full bg-brand-500" />
+                )}
 
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-start gap-3 flex-1">
-                  <div style={{
-                    width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-                    background: cfg.bg, border: `1px solid ${cfg.border}`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}>
-                    <Icon style={{ width: 16, height: 16, color: cfg.color }} />
+                {/* Icon */}
+                <div className={`mt-0.5 flex-shrink-0 ${cfg.iconClass}`}>
+                  <Icon className="h-5 w-5" />
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2 mb-1">
+                    <Badge variant="light" color={cfg.badgeColor} size="sm">{cfg.label}</Badge>
+                    <p className="text-sm font-semibold text-gray-800 dark:text-white">{notif.title}</p>
                   </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div className="flex items-center gap-2 flex-wrap mb-1">
-                      <p style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>{notif.title}</p>
-                      <span style={{
-                        fontSize: 9, fontWeight: 700, padding: '2px 8px', borderRadius: 100,
-                        color: cfg.color, background: cfg.bg, border: `1px solid ${cfg.border}`,
-                      }}>{cfg.label}</span>
-                      {!notif.read && (
-                        <div style={{ width: 6, height: 6, borderRadius: '50%', background: cfg.color, boxShadow: `0 0 6px ${cfg.color}`, flexShrink: 0 }} />
-                      )}
-                    </div>
-                    <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', lineHeight: 1.5, marginBottom: 6 }}>{notif.message}</p>
-                    <div className="flex items-center gap-3" style={{ fontSize: 11 }}>
-                      <span style={{ color: 'rgba(255,255,255,0.3)', fontFamily: "'JetBrains Mono', monospace" }}>{notif.time}</span>
-                      {notif.cam && <span style={{ color: 'rgba(255,255,255,0.25)' }}>· {notif.cam}</span>}
-                      {notif.link && (
-                        <a href={notif.link} style={{ color: '#38BDF8', display: 'flex', alignItems: 'center', gap: 3 }} onClick={e => e.stopPropagation()}>
-                          <ExternalLink style={{ width: 10, height: 10 }} /> View
+                  <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{notif.message}</p>
+                  <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-gray-400 dark:text-gray-500">
+                    <span>{notif.time}</span>
+                    {notif.cam && (
+                      <>
+                        <span>·</span>
+                        <span className="font-mono">{notif.cam}</span>
+                      </>
+                    )}
+                    {notif.link && (
+                      <>
+                        <span>·</span>
+                        <a
+                          href={notif.link}
+                          onClick={e => e.stopPropagation()}
+                          className="flex items-center gap-1 text-brand-500 hover:underline"
+                        >
+                          <ExternalLink className="h-3 w-3" /> View
                         </a>
-                      )}
-                    </div>
+                      </>
+                    )}
                   </div>
                 </div>
+
+                {/* Dismiss */}
                 <button
-                  className="btn-icon"
-                  style={{ padding: 5, flexShrink: 0 }}
                   onClick={e => { e.stopPropagation(); dismiss(notif.id); }}
-                  title="Dismiss"
+                  className="ml-1 flex-shrink-0 rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-white/[0.06] dark:hover:text-gray-200"
                 >
-                  <X style={{ width: 13, height: 13 }} />
+                  <X className="h-4 w-4" />
                 </button>
               </div>
             </div>
           );
         })}
-
-        {filtered.length === 0 && (
-          <div className="glass-card" style={{ padding: 48, textAlign: 'center' }}>
-            <Bell style={{ width: 40, height: 40, color: 'rgba(255,255,255,0.15)', margin: '0 auto 12px' }} />
-            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14 }}>No notifications in this category</p>
-          </div>
-        )}
       </div>
     </div>
   );

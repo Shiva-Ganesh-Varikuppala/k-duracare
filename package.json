@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
     "@vitejs/plugin-react": "^6.1.1",
     "autoprefixer": "^10.6.1",
     "postcss": "^8.5.28",
@@ -18,10 +19,12 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
+    "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
     "lucide-react": "^1.47.0",
     "react-hot-toast": "^2.6.1",
     "react-router-dom": "^7.18.4",
-    "recharts": "^3.10.1"
+    "recharts": "^3.10.1",
+    "tailwind-merge": "^3.7.0"
   }
 }

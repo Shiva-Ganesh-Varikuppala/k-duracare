@@ -1,388 +1,454 @@
-import { useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useSidebar } from '../context/SidebarContext';
 import {
-  LayoutDashboard, Users, Building2, Shield, Clock, Calendar, Wallet, Video,
-  BarChart3, FileText, Bell, Settings, ScrollText, ChevronRight, ChevronDown,
-  LogOut, Menu, X, Stethoscope, UserCheck, Layers, Activity, Heart, Key, Lock
+  LayoutDashboard,
+  Users,
+  Building2,
+  Shield,
+  UserCheck,
+  Clock,
+  Calendar,
+  Wallet,
+  Activity,
+  Video,
+  BarChart3,
+  FileText,
+  Bell,
+  ScrollText,
+  Settings,
+  ChevronDown,
+  LogOut,
+  Stethoscope,
+  HeartPulse,
+  Sparkles,
+  Bed,
+  Layers,
+  ChevronRight,
 } from 'lucide-react';
+import Badge from './ui/badge/Badge';
 
-const NAV_ITEMS = [
-  {
-    label: 'Dashboard',
-    icon: LayoutDashboard,
-    path: '/dashboard',
-    module: 'dashboard'
-  },
-  {
-    label: 'Workforce',
-    icon: Users,
-    module: 'workforce',
-    children: [
-      { label: 'All Employees', path: '/employees', module: 'workforce' },
-      { label: 'Departments', path: '/departments', module: 'departments' },
-      { label: 'Roles & Permissions', path: '/roles', module: 'roles' },
-    ]
-  },
-  {
-    label: 'Attendance',
-    icon: UserCheck,
-    module: 'attendance',
-    children: [
-      { label: "Today's Muster", path: '/attendance', module: 'attendance' },
-      { label: 'Attendance History', path: '/attendance/history', module: 'attendance' },
-      { label: 'Corrections', path: '/attendance/corrections', module: 'attendance' },
-    ]
-  },
-  {
-    label: 'Shifts & Rosters',
-    icon: Clock,
-    module: 'shifts',
-    children: [
-      { label: 'Shift Master', path: '/shifts', module: 'shifts' },
-      { label: 'Weekly Roster', path: '/shifts/roster', module: 'shifts' },
-      { label: 'Coverage Matrix', path: '/shifts/coverage', module: 'shifts' },
-    ]
-  },
-  {
-    label: 'Leave Management',
-    icon: Calendar,
-    module: 'leave',
-    children: [
-      { label: 'Apply Leave', path: '/leave/apply', module: 'leave' },
-      { label: 'Leave Requests', path: '/leave/requests', module: 'leave' },
-      { label: 'My Balance', path: '/leave/balance', module: 'leave' },
-      { label: 'Hospital Calendar', path: '/leave/calendar', module: 'leave' },
-    ]
-  },
-  {
-    label: 'Payroll & Salary',
-    icon: Wallet,
-    module: 'payroll',
-    children: [
-      { label: 'Salary Structure', path: '/payroll/structure', module: 'payroll' },
-      { label: 'Process Payroll', path: '/payroll/process', module: 'payroll' },
-      { label: 'Staff Payslips', path: '/payroll/payslips', module: 'payroll' },
-      { label: 'Financial Reports', path: '/payroll/reports', module: 'payroll' },
-    ]
-  },
-  {
-    label: 'Worker Activity AI',
-    icon: Activity,
-    module: 'activity',
-    children: [
-      { label: 'Live Telemetry', path: '/activity', module: 'activity' },
-      { label: 'Zone Movement', path: '/activity', module: 'activity' },
-      { label: 'Heatmaps', path: '/activity', module: 'activity' },
-    ]
-  },
-  {
-    label: 'CCTV Surveillance',
-    icon: Video,
-    module: 'monitor',
-    children: [
-      { label: 'Live Matrix', path: '/monitor', module: 'monitor' },
-      { label: 'Camera Feeds', path: '/monitor/cameras', module: 'monitor' },
-      { label: 'Incident Alerts', path: '/monitor/alerts', module: 'monitor' },
-    ]
-  },
-  {
-    label: 'Analytics',
-    icon: BarChart3,
-    path: '/analytics/hospital',
-    module: 'analytics'
-  },
-  {
-    label: 'Reports Library',
-    icon: FileText,
-    path: '/reports',
-    module: 'reports'
-  },
-  {
-    label: 'Notifications',
-    icon: Bell,
-    path: '/notifications',
-    module: 'dashboard'
-  },
-  {
-    label: 'Audit Trail',
-    icon: ScrollText,
-    path: '/audit',
-    module: 'audit'
-  },
-  {
-    label: 'System Settings',
-    icon: Settings,
-    path: '/settings',
-    module: 'settings'
-  },
-];
-
-export default function Sidebar({ collapsed, setCollapsed }) {
-  const { user, logout, hasPermission, switchRole, ROLES } = useAuth();
+export default function Sidebar() {
+  const { user, logout, hasPermission, ROLES } = useAuth();
+  const {
+    isExpanded,
+    isMobileOpen,
+    isHovered,
+    setIsHovered,
+    toggleMobileSidebar,
+  } = useSidebar();
+  const location = useLocation();
   const navigate = useNavigate();
-  const [openGroups, setOpenGroups] = useState({ Workforce: true, 'Shifts & Rosters': false, 'Payroll & Salary': false });
 
-  const toggleGroup = (label) => setOpenGroups(p => ({ ...p, [label]: !p[label] }));
+  const [openGroups, setOpenGroups] = useState({
+    workforce: true,
+    attendance: false,
+    shifts: false,
+    leave: false,
+    payroll: false,
+    clinical: true,
+    surveillance: false,
+    activity: false,
+  });
+
+  const toggleGroup = (key) => {
+    setOpenGroups((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
-  // Filter items strictly based on role permissions
-  const visibleItems = NAV_ITEMS.reduce((acc, item) => {
-    // If item has children, filter children first
-    if (item.children) {
-      const allowedChildren = item.children.filter(child => hasPermission(child.module || item.module));
-      if (allowedChildren.length > 0 && hasPermission(item.module)) {
-        acc.push({ ...item, children: allowedChildren });
-      }
-    } else if (hasPermission(item.module)) {
-      acc.push(item);
-    }
-    return acc;
-  }, []);
+  const isCollapsedView = !isExpanded && !isHovered && !isMobileOpen;
 
-  const getRoleBadgeStyle = (role) => {
-    switch (role) {
-      case ROLES.SUPER_ADMIN:
-        return { bg: 'rgba(56, 189, 248, 0.15)', text: '#38BDF8', border: 'rgba(56, 189, 248, 0.3)' };
-      case ROLES.MANAGEMENT:
-        return { bg: 'rgba(99, 102, 241, 0.15)', text: '#818CF8', border: 'rgba(99, 102, 241, 0.3)' };
-      case ROLES.HR_ADMIN:
-        return { bg: 'rgba(167, 139, 250, 0.15)', text: '#A78BFA', border: 'rgba(167, 139, 250, 0.3)' };
-      case ROLES.PAYROLL_OFFICER:
-        return { bg: 'rgba(168, 85, 247, 0.15)', text: '#C084FC', border: 'rgba(168, 85, 247, 0.3)' };
-      case ROLES.DOCTOR:
-        return { bg: 'rgba(52, 211, 153, 0.15)', text: '#34D399', border: 'rgba(52, 211, 153, 0.3)' };
-      case ROLES.NURSE:
-      case ROLES.ICU_STAFF:
-        return { bg: 'rgba(251, 191, 36, 0.15)', text: '#FBBF24', border: 'rgba(251, 191, 36, 0.3)' };
-      case ROLES.SECURITY_SUPERVISOR:
-      case ROLES.SECURITY_GUARD:
-        return { bg: 'rgba(45, 212, 191, 0.15)', text: '#2DD4BF', border: 'rgba(45, 212, 191, 0.3)' };
-      default:
-        return { bg: 'rgba(148, 163, 184, 0.15)', text: '#94A3B8', border: 'rgba(148, 163, 184, 0.3)' };
+  // Auto-expand group if child is active
+  useEffect(() => {
+    const path = location.pathname;
+    if (path.startsWith('/employees') || path.startsWith('/departments') || path.startsWith('/roles')) {
+      setOpenGroups(p => ({ ...p, workforce: true }));
+    } else if (path.startsWith('/attendance')) {
+      setOpenGroups(p => ({ ...p, attendance: true }));
+    } else if (path.startsWith('/shifts')) {
+      setOpenGroups(p => ({ ...p, shifts: true }));
+    } else if (path.startsWith('/leave')) {
+      setOpenGroups(p => ({ ...p, leave: true }));
+    } else if (path.startsWith('/payroll')) {
+      setOpenGroups(p => ({ ...p, payroll: true }));
+    } else if (path.startsWith('/activity')) {
+      setOpenGroups(p => ({ ...p, activity: true }));
+    } else if (path.startsWith('/monitor')) {
+      setOpenGroups(p => ({ ...p, surveillance: true }));
     }
-  };
+  }, [location.pathname]);
 
-  const getCustomLabel = (item) => {
-    if (item.label === 'Dashboard') {
-      if (user?.role === ROLES.DOCTOR) return 'Clinical Dashboard';
-      if (user?.role === ROLES.NURSE) return 'Nurse Dashboard';
-      if (user?.role === ROLES.ICU_STAFF) return 'ICU Command';
-      if (user?.role === ROLES.OPD_STAFF) return 'OPD Dashboard';
-      if (user?.role === ROLES.LAB_STAFF) return 'Lab Workload';
-      if (user?.role === ROLES.OT_STAFF) return 'OT Suites';
-      if (user?.role === ROLES.RECEPTIONIST) return 'Reception & Queue';
-      if (user?.role === ROLES.SECURITY_SUPERVISOR || user?.role === ROLES.SECURITY_GUARD) return 'Security Command';
-      if (user?.role === ROLES.ATTENDANCE_OFFICER) return 'Attendance Center';
-      if (user?.role === ROLES.PAYROLL_OFFICER) return 'Payroll Center';
-      if (user?.role === ROLES.MANAGEMENT) return 'Hospital Overview';
-      if (user?.role === ROLES.HOD) return 'Department HOD';
-      if ([ROLES.EMPLOYEE, ROLES.AAYAH, ROLES.SWEEPER, ROLES.SCAVENGER, ROLES.DHOBI].includes(user?.role)) return 'My K-DuraCare';
-    }
-    if (item.label === 'Attendance' && [ROLES.EMPLOYEE, ROLES.DOCTOR, ROLES.NURSE, ROLES.AAYAH, ROLES.SWEEPER, ROLES.SCAVENGER, ROLES.DHOBI, ROLES.RECEPTIONIST, ROLES.ICU_STAFF].includes(user?.role)) {
-      return 'My Attendance';
-    }
-    if (item.label === 'Leave Management' && [ROLES.EMPLOYEE, ROLES.DOCTOR, ROLES.NURSE, ROLES.AAYAH, ROLES.SWEEPER, ROLES.SCAVENGER, ROLES.DHOBI, ROLES.RECEPTIONIST, ROLES.ICU_STAFF].includes(user?.role)) {
-      return 'My Leave';
-    }
-    if (item.label === 'Shifts & Rosters' && [ROLES.EMPLOYEE, ROLES.DOCTOR, ROLES.NURSE, ROLES.AAYAH, ROLES.SWEEPER, ROLES.SCAVENGER, ROLES.DHOBI, ROLES.RECEPTIONIST, ROLES.ICU_STAFF].includes(user?.role)) {
-      return 'My Shifts';
-    }
-    return item.label;
-  };
-
-  const badgeStyle = getRoleBadgeStyle(user?.role);
+  const navSections = [
+    {
+      title: 'MAIN',
+      items: [
+        {
+          label: 'Dashboard',
+          icon: LayoutDashboard,
+          path: '/dashboard',
+          module: 'dashboard',
+        },
+      ],
+    },
+    {
+      title: 'WORKFORCE & HR',
+      items: [
+        {
+          label: 'Workforce',
+          icon: Users,
+          module: 'workforce',
+          groupKey: 'workforce',
+          children: [
+            { label: 'All Employees', path: '/employees', module: 'workforce' },
+            { label: 'Departments', path: '/departments', module: 'departments' },
+            { label: 'Roles & Clearances', path: '/roles', module: 'roles' },
+          ],
+        },
+        {
+          label: 'Attendance',
+          icon: UserCheck,
+          module: 'attendance',
+          groupKey: 'attendance',
+          children: [
+            { label: "Today's Muster", path: '/attendance', module: 'attendance' },
+            { label: 'Attendance History', path: '/attendance/history', module: 'attendance' },
+            { label: 'Corrections', path: '/attendance/corrections', module: 'attendance' },
+          ],
+        },
+      ],
+    },
+    {
+      title: 'OPERATIONS & ROSTERS',
+      items: [
+        {
+          label: 'Shifts & Rosters',
+          icon: Clock,
+          module: 'shifts',
+          groupKey: 'shifts',
+          children: [
+            { label: 'Shift Master', path: '/shifts', module: 'shifts' },
+            { label: 'Weekly Roster', path: '/shifts/roster', module: 'shifts' },
+            { label: 'Coverage Matrix', path: '/shifts/coverage', module: 'shifts' },
+          ],
+        },
+        {
+          label: 'Leave Management',
+          icon: Calendar,
+          module: 'leave',
+          groupKey: 'leave',
+          children: [
+            { label: 'Apply Leave', path: '/leave/apply', module: 'leave' },
+            { label: 'Leave Requests', path: '/leave/requests', module: 'leave' },
+            { label: 'My Leave Balance', path: '/leave/balance', module: 'leave' },
+            { label: 'Hospital Calendar', path: '/leave/calendar', module: 'leave' },
+          ],
+        },
+        {
+          label: 'Payroll & Salary',
+          icon: Wallet,
+          module: 'payroll',
+          groupKey: 'payroll',
+          children: [
+            { label: 'Salary Structure', path: '/payroll/structure', module: 'payroll' },
+            { label: 'Process Payroll', path: '/payroll/process', module: 'payroll' },
+            { label: 'Staff Payslips', path: '/payroll/payslips', module: 'payroll' },
+            { label: 'Financial Reports', path: '/payroll/reports', module: 'payroll' },
+          ],
+        },
+      ],
+    },
+    {
+      title: 'CLINICAL INTELLIGENCE',
+      items: [
+        {
+          label: 'Workforce Operations',
+          icon: Activity,
+          module: 'activity',
+          groupKey: 'activity',
+          badge: 'AI',
+          children: [
+            { label: 'Operational overview', path: '/activity', module: 'activity' },
+            { label: 'Work-zone presence', path: '/activity', module: 'activity' },
+            { label: 'Coverage patterns', path: '/activity', module: 'activity' },
+          ],
+        },
+        {
+          label: 'Facility Monitoring',
+          icon: Video,
+          module: 'monitor',
+          groupKey: 'surveillance',
+          children: [
+            { label: 'Monitoring overview', path: '/monitor', module: 'monitor' },
+            { label: 'Camera health', path: '/monitor/cameras', module: 'monitor' },
+            { label: 'Safety events', path: '/monitor/alerts', module: 'monitor' },
+          ],
+        },
+      ],
+    },
+    {
+      title: 'ANALYTICS & SYSTEM',
+      items: [
+        {
+          label: 'Hospital Analytics',
+          icon: BarChart3,
+          path: '/analytics/hospital',
+          module: 'analytics',
+        },
+        {
+          label: 'Reports Library',
+          icon: FileText,
+          path: '/reports',
+          module: 'reports',
+        },
+        {
+          label: 'Notifications',
+          icon: Bell,
+          path: '/notifications',
+          module: 'dashboard',
+        },
+        {
+          label: 'Audit Trail',
+          icon: ScrollText,
+          path: '/audit',
+          module: 'audit',
+        },
+        {
+          label: 'System Settings',
+          icon: Settings,
+          path: '/settings',
+          module: 'settings',
+        },
+      ],
+    },
+  ];
 
   return (
     <aside
-      className="sidebar-glass fixed left-0 top-0 h-screen flex flex-col z-50 transition-all select-none"
-      style={{
-        width: collapsed ? 'var(--sidebar-collapsed)' : 'var(--sidebar-width)',
-        transitionDuration: '300ms',
-        transitionTimingFunction: 'cubic-bezier(0.4,0,0.2,1)',
-      }}
+      className={`fixed top-0 left-0 z-50 flex h-screen flex-col border-r border-gray-200 bg-white transition-all duration-300 ease-in-out dark:border-gray-800 dark:bg-gray-900 ${
+        isExpanded || isHovered
+          ? 'w-72'
+          : 'w-20'
+      } ${
+        isMobileOpen
+          ? 'translate-x-0'
+          : '-translate-x-full xl:translate-x-0'
+      }`}
+      onMouseEnter={() => !isExpanded && setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Brand Header */}
-      <div
-        className="flex items-center gap-3 px-4 border-b border-white/5"
-        style={{ minHeight: '64px', padding: collapsed ? '0 14px' : '0 16px' }}
-      >
-        <div
-          style={{
-            width: 36, height: 36,
-            borderRadius: 12,
-            background: 'linear-gradient(135deg, #0EA5E9, #6366F1)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 4px 16px rgba(14,165,233,0.35)',
-            border: '1px solid rgba(255,255,255,0.2)',
-            flexShrink: 0,
-          }}
-        >
-          <Heart style={{ width: 18, height: 18, color: '#fff' }} />
-        </div>
-
-        {!collapsed && (
-          <div className="flex-1 min-w-0">
-            <span style={{ fontSize: 15, fontWeight: 900, color: '#fff', letterSpacing: '-0.02em', display: 'block', lineHeight: 1.2 }}>
-              K-DuraCare
-            </span>
-            <span style={{ fontSize: 10, color: '#38BDF8', fontWeight: 600, letterSpacing: '0.03em' }}>
-              Kanakadurga Hospital
-            </span>
+      {/* Sidebar Header with Brand */}
+      <div className="flex h-18 items-center justify-between border-b border-gray-100 px-5 dark:border-gray-800">
+        <NavLink to="/dashboard" className="flex items-center gap-3 overflow-hidden">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-500 text-white shadow-theme-sm ring-4 ring-brand-50 dark:ring-brand-500/10">
+            <HeartPulse className="h-6 w-6" />
           </div>
-        )}
 
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className="btn-icon"
-          style={{ padding: 6, marginLeft: 'auto', flexShrink: 0 }}
-          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        >
-          {collapsed ? <ChevronRight style={{ width: 14, height: 14 }} /> : <Menu style={{ width: 14, height: 14 }} />}
-        </button>
-      </div>
-
-      {/* Role Clearance Pill in Sidebar */}
-      {!collapsed && (
-        <div style={{ padding: '10px 14px 4px' }}>
-          <div style={{
-            background: badgeStyle.bg,
-            border: `1px solid ${badgeStyle.border}`,
-            borderRadius: '10px',
-            padding: '6px 10px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Lock style={{ width: '11px', height: '11px', color: badgeStyle.text }} />
-              <span style={{ fontSize: '11px', fontWeight: '700', color: badgeStyle.text }}>
-                {user?.role}
+          {(!isCollapsedView || isMobileOpen) && (
+            <div className="flex flex-col truncate">
+              <span className="text-base font-bold tracking-tight text-gray-900 dark:text-white flex items-center gap-1.5">
+                K-DuraCare
+                <span className="rounded-full bg-brand-50 px-1.5 py-0.2 text-[10px] font-semibold text-brand-500 dark:bg-brand-500/15 dark:text-brand-400">
+                  HOSPITAL
+                </span>
+              </span>
+                <span className="truncate text-xs text-gray-500 dark:text-gray-400">
+                Clinical operations workspace
               </span>
             </div>
-            <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              {visibleItems.length} Modules
-            </span>
+          )}
+        </NavLink>
+      </div>
+
+      {/* Navigation List */}
+      <div className="custom-scrollbar flex-1 overflow-y-auto px-4 py-4 space-y-6">
+        {navSections.map((section) => {
+          // Filter items based on permissions
+          const visibleItems = section.items.filter((item) => {
+            if (item.children) {
+              return item.children.some((c) => hasPermission(c.module || item.module));
+            }
+            return hasPermission(item.module);
+          });
+
+          if (visibleItems.length === 0) return null;
+
+          return (
+            <div key={section.title} className="space-y-1.5">
+              {(!isCollapsedView || isMobileOpen) && (
+                <h4 className="px-3 text-[11px] font-semibold tracking-wider text-gray-400 dark:text-gray-500 uppercase">
+                  {section.title}
+                </h4>
+              )}
+
+              <ul className="space-y-1">
+                {visibleItems.map((item) => {
+                  const Icon = item.icon;
+
+                  if (item.children) {
+                    const isGroupOpen = openGroups[item.groupKey];
+                    const allowedChildren = item.children.filter((c) =>
+                      hasPermission(c.module || item.module)
+                    );
+                    const isAnyChildActive = allowedChildren.some(
+                      (c) => location.pathname === c.path
+                    );
+
+                    return (
+                      <li key={item.label}>
+                        <button
+                          type="button"
+                          onClick={() => toggleGroup(item.groupKey)}
+                          className={`menu-item group ${
+                            isAnyChildActive
+                              ? 'text-brand-500 dark:text-brand-400 font-semibold'
+                              : 'menu-item-inactive'
+                          } ${isCollapsedView ? 'justify-center px-0' : 'justify-between'}`}
+                          title={isCollapsedView ? item.label : undefined}
+                        >
+                          <div className="flex items-center gap-3">
+                            <span
+                              className={`shrink-0 ${
+                                isAnyChildActive
+                                  ? 'text-brand-500 dark:text-brand-400'
+                                  : 'text-gray-500 group-hover:text-gray-700 dark:text-gray-400 dark:group-hover:text-gray-300'
+                              }`}
+                            >
+                              <Icon className="h-5 w-5" />
+                            </span>
+
+                            {(!isCollapsedView || isMobileOpen) && (
+                              <span className="text-sm font-medium">{item.label}</span>
+                            )}
+                          </div>
+
+                          {(!isCollapsedView || isMobileOpen) && (
+                            <div className="flex items-center gap-1.5">
+                              {item.badge && (
+                                <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-semibold text-brand-500 dark:bg-brand-500/15 dark:text-brand-400">
+                                  {item.badge}
+                                </span>
+                              )}
+                              <ChevronDown
+                                className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${
+                                  isGroupOpen ? 'rotate-180 text-brand-500 dark:text-brand-400' : ''
+                                }`}
+                              />
+                            </div>
+                          )}
+                        </button>
+
+                        {/* Submenu */}
+                        {(!isCollapsedView || isMobileOpen) && isGroupOpen && (
+                          <ul className="mt-1 space-y-1 pl-9 pr-1">
+                            {allowedChildren.map((child) => {
+                              const isChildActive = location.pathname === child.path;
+                              return (
+                                <li key={child.path}>
+                                  <NavLink
+                                    to={child.path}
+                                    className={`menu-dropdown-item ${
+                                      isChildActive
+                                        ? 'menu-dropdown-item-active'
+                                        : 'menu-dropdown-item-inactive'
+                                    }`}
+                                  >
+                                    <span
+                                      className={`h-1.5 w-1.5 rounded-full transition-colors ${
+                                        isChildActive
+                                          ? 'bg-brand-500'
+                                          : 'bg-gray-300 dark:bg-gray-600'
+                                      }`}
+                                    />
+                                    <span>{child.label}</span>
+                                  </NavLink>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        )}
+                      </li>
+                    );
+                  }
+
+                  // Single direct link item
+                  const isActive = location.pathname === item.path;
+
+                  return (
+                    <li key={item.label}>
+                      <NavLink
+                        to={item.path}
+                        className={`menu-item group ${
+                          isActive ? 'menu-item-active font-semibold' : 'menu-item-inactive'
+                        } ${isCollapsedView ? 'justify-center px-0' : ''}`}
+                        title={isCollapsedView ? item.label : undefined}
+                      >
+                        <span
+                          className={`shrink-0 ${
+                            isActive
+                              ? 'text-brand-500 dark:text-brand-400'
+                              : 'text-gray-500 group-hover:text-gray-700 dark:text-gray-400 dark:group-hover:text-gray-300'
+                          }`}
+                        >
+                          <Icon className="h-5 w-5" />
+                        </span>
+
+                        {(!isCollapsedView || isMobileOpen) && (
+                          <span className="text-sm font-medium">{item.label}</span>
+                        )}
+                      </NavLink>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* User Status / Quick Logout Footer Card */}
+      {user && (
+        <div className="border-t border-gray-100 p-3 dark:border-gray-800">
+          <div
+            className={`flex items-center gap-3 rounded-xl p-2.5 transition-colors ${
+              isCollapsedView
+                ? 'justify-center'
+                : 'bg-gray-50 hover:bg-gray-100 dark:bg-gray-800/60 dark:hover:bg-gray-800'
+            }`}
+          >
+            <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-500 font-bold text-white text-xs shadow-theme-xs">
+              {user.avatar || user.name?.charAt(0) || 'U'}
+              <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-500 dark:border-gray-900" />
+            </div>
+
+            {(!isCollapsedView || isMobileOpen) && (
+              <div className="flex flex-1 flex-col truncate">
+                <span className="truncate text-xs font-semibold text-gray-800 dark:text-white">
+                  {user.name}
+                </span>
+                <span className="truncate text-[11px] text-gray-500 dark:text-gray-400">
+                  {user.role}
+                </span>
+              </div>
+            )}
+
+            {(!isCollapsedView || isMobileOpen) && (
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-white hover:text-rose-500 dark:hover:bg-gray-700 transition"
+                title="Sign Out"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
+            )}
           </div>
         </div>
       )}
-
-      {/* Navigation Links */}
-      <nav className="flex-1 overflow-y-auto py-3 space-y-1" style={{ paddingLeft: '8px', paddingRight: '8px' }}>
-        {visibleItems.map(item => {
-          if (item.children) {
-            const isOpen = openGroups[item.label] ?? false;
-            return (
-              <div key={item.label}>
-                <button
-                  type="button"
-                  onClick={() => toggleGroup(item.label)}
-                  className="nav-item flex items-center justify-between"
-                  style={{
-                    width: '100%',
-                    justifyContent: collapsed ? 'center' : 'space-between',
-                    padding: '8px 12px',
-                    borderRadius: '12px',
-                  }}
-                  title={collapsed ? item.label : undefined}
-                >
-                  <div className="flex items-center gap-3">
-                    <item.icon style={{ width: 16, height: 16, flexShrink: 0 }} />
-                    {!collapsed && <span style={{ fontSize: 13, fontWeight: 500 }}>{getCustomLabel(item)}</span>}
-                  </div>
-                  {!collapsed && (
-                    <ChevronDown style={{
-                      width: 13, height: 13,
-                      transition: 'transform 0.2s ease',
-                      transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                      opacity: 0.5,
-                    }} />
-                  )}
-                </button>
-                {!collapsed && isOpen && (
-                  <div style={{ marginLeft: 10, marginTop: 2, paddingLeft: 12, borderLeft: '1px solid rgba(255,255,255,0.08)' }} className="space-y-1">
-                    {item.children.map((child, ci) => (
-                      <NavLink
-                        key={`${child.path}-${ci}`}
-                        to={child.path}
-                        className={({ isActive }) =>
-                          isActive ? 'nav-item-active' : 'nav-item'
-                        }
-                        style={{ fontSize: 12, padding: '7px 12px', borderRadius: 10 }}
-                      >
-                        {child.label}
-                      </NavLink>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          }
-          return (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              className={({ isActive }) =>
-                isActive ? 'nav-item-active' : 'nav-item'
-              }
-              style={{
-                justifyContent: collapsed ? 'center' : 'flex-start',
-                padding: '8px 12px',
-                borderRadius: '12px',
-              }}
-              title={collapsed ? item.label : undefined}
-            >
-              <item.icon style={{ width: 16, height: 16, flexShrink: 0 }} />
-              {!collapsed && <span style={{ fontSize: 13, fontWeight: 500 }}>{getCustomLabel(item)}</span>}
-            </NavLink>
-          );
-        })}
-      </nav>
-
-      {/* User Identity & Logout Footer */}
-      <div className="border-t border-white/5" style={{ padding: '12px' }}>
-        <div
-          className="flex items-center gap-3"
-          style={{ justifyContent: collapsed ? 'center' : 'flex-start' }}
-        >
-          <div
-            style={{
-              width: 36, height: 36,
-              borderRadius: '50%',
-              background: 'linear-gradient(135deg, #0EA5E9, #8B5CF6)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#fff', fontSize: 12, fontWeight: 700, flexShrink: 0,
-              boxShadow: '0 2px 12px rgba(99,102,241,0.3)',
-            }}
-          >
-            {user?.avatar || user?.name?.charAt(0) || 'U'}
-          </div>
-          {!collapsed && (
-            <>
-              <div className="flex-1 min-w-0">
-                <p style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.95)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {user?.name}
-                </p>
-                <p style={{ fontSize: 10, color: badgeStyle.text, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {user?.role}
-                </p>
-              </div>
-              <button
-                onClick={handleLogout}
-                className="btn-icon"
-                style={{ padding: 6, flexShrink: 0 }}
-                title="Logout"
-              >
-                <LogOut style={{ width: 14, height: 14, color: '#F87171' }} />
-              </button>
-            </>
-          )}
-        </div>
-      </div>
     </aside>
   );
 }
