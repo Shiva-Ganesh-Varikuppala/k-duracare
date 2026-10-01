@@ -1,60 +1,42 @@
-import { useState } from 'react';
 import { Outlet, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { SidebarProvider, useSidebar } from '../context/SidebarContext';
 import Sidebar from '../components/Sidebar';
 import TopBar from '../components/TopBar';
+import Backdrop from '../components/Backdrop';
+
+function LayoutContent() {
+  const { isExpanded, isHovered, isMobileOpen } = useSidebar();
+
+  return (
+    <div className="clinical-page min-h-screen transition-colors duration-200">
+      <Sidebar />
+      <Backdrop />
+
+      <div
+        className={`flex-1 transition-[margin] duration-300 ease-in-out ${
+          isExpanded || isHovered ? 'xl:ml-72' : 'xl:ml-20'
+        } ${isMobileOpen ? 'ml-0' : ''}`}
+      >
+        <TopBar />
+        <main className="mx-auto max-w-[1600px] p-4 sm:p-6 md:p-8">
+          <div className="animate-fade-in">
+            <Outlet />
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+}
 
 export default function AppLayout() {
   const { user } = useAuth();
-  const [collapsed, setCollapsed] = useState(false);
 
   if (!user) return <Navigate to="/login" replace />;
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--bg-base)', position: 'relative' }}>
-      {/* Aurora background layer */}
-      <div className="aurora-bg" aria-hidden="true">
-        <div className="aurora-orb aurora-orb-1" />
-        <div className="aurora-orb aurora-orb-2" />
-      </div>
-
-      {/* Subtle mesh overlay */}
-      <div style={{
-        position: 'fixed',
-        inset: 0,
-        backgroundImage: [
-          'radial-gradient(at 15% 25%, rgba(14,165,233,0.06) 0px, transparent 55%)',
-          'radial-gradient(at 85% 10%, rgba(99,102,241,0.06) 0px, transparent 55%)',
-          'radial-gradient(at 40% 80%, rgba(139,92,246,0.05) 0px, transparent 55%)',
-          'radial-gradient(at 75% 65%, rgba(6,182,212,0.04) 0px, transparent 45%)',
-        ].join(','),
-        pointerEvents: 'none',
-        zIndex: 0,
-      }} aria-hidden="true" />
-
-      {/* Sidebar */}
-      <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} />
-
-      {/* Topbar */}
-      <TopBar sidebarCollapsed={collapsed} />
-
-      {/* Main Content */}
-      <main
-        className="transition-all"
-        style={{
-          paddingLeft: collapsed ? 'var(--sidebar-collapsed)' : 'var(--sidebar-width)',
-          paddingTop: 'var(--topbar-height)',
-          minHeight: '100vh',
-          position: 'relative',
-          zIndex: 1,
-          transitionDuration: '300ms',
-          transitionTimingFunction: 'cubic-bezier(0.4,0,0.2,1)',
-        }}
-      >
-        <div style={{ padding: '28px', maxWidth: '1600px' }} className="animate-fade-in">
-          <Outlet />
-        </div>
-      </main>
-    </div>
+    <SidebarProvider>
+      <LayoutContent />
+    </SidebarProvider>
   );
 }

@@ -1,35 +1,48 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Plus, ChevronRight, Phone, LayoutGrid, List, UserCheck, ChevronLeft, X, Save, User } from 'lucide-react';
-import { employees, departments } from '../data/employees';
+import {
+  Search,
+  Plus,
+  ChevronRight,
+  Phone,
+  LayoutGrid,
+  List,
+  ChevronLeft,
+  X,
+  Mail,
+  User,
+} from 'lucide-react';
+import { employees as initialEmployees, departments } from '../data/employees';
 import { toast } from 'react-hot-toast';
+import Badge from '../components/ui/badge/Badge';
+import Button from '../components/ui/button/Button';
+import PageBreadcrumb from '../components/common/PageBreadcrumb';
+import ComponentCard from '../components/common/ComponentCard';
 
-const shiftColors = {
-  'Morning': { color: '#FBBF24', bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.25)' },
-  'Evening': { color: '#38BDF8', bg: 'rgba(14,165,233,0.12)', border: 'rgba(14,165,233,0.25)' },
-  'Night':   { color: '#C084FC', bg: 'rgba(168,85,247,0.12)', border: 'rgba(168,85,247,0.25)' },
-  'General': { color: '#34D399', bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.25)' },
+const shiftColorMap = {
+  Morning: 'warning',
+  Evening: 'info',
+  Night: 'purple',
+  General: 'success',
 };
 
-const statusColors = {
-  'Active':    { color: '#34D399', bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.25)' },
-  'On Leave':  { color: '#FBBF24', bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.25)' },
-  'Inactive':  { color: '#F87171', bg: 'rgba(239,68,68,0.12)', border: 'rgba(239,68,68,0.25)' },
-  'Probation': { color: '#FB923C', bg: 'rgba(249,115,22,0.12)', border: 'rgba(249,115,22,0.25)' },
+const statusColorMap = {
+  Active: 'success',
+  'On Leave': 'warning',
+  Inactive: 'error',
+  Probation: 'primary',
 };
-
-function StatusBadge({ status }) {
-  const c = statusColors[status] || statusColors['Active'];
-  return (
-    <span style={{ background: c.bg, border: `1px solid ${c.border}`, color: c.color, fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 100 }}>
-      {status}
-    </span>
-  );
-}
 
 function AddEmployeeModal({ onClose, onAdd }) {
   const [form, setForm] = useState({
-    name: '', designation: '', department: departments[0]?.name || '', shift: 'General', phone: '', email: '', status: 'Active', joinDate: ''
+    name: '',
+    designation: '',
+    department: departments[0]?.name || '',
+    shift: 'General',
+    phone: '',
+    email: '',
+    status: 'Active',
+    joinDate: new Date().toISOString().split('T')[0],
   });
   const [saving, setSaving] = useState(false);
 
@@ -40,68 +53,120 @@ function AddEmployeeModal({ onClose, onAdd }) {
       return;
     }
     setSaving(true);
-    await new Promise(r => setTimeout(r, 800));
-    onAdd({ ...form, id: `KD-EMP-${String(employees.length + 1).padStart(4, '0')}` });
-    toast.success(`${form.name} added to the workforce!`);
+    await new Promise((r) => setTimeout(r, 600));
+    onAdd({
+      ...form,
+      id: `KD-EMP-${String(initialEmployees.length + 1).padStart(4, '0')}`,
+      avatar: form.name.charAt(0),
+    });
+    toast.success(`${form.name} enrolled into workforce!`);
     setSaving(false);
     onClose();
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-glass" style={{ width: '100%', maxWidth: 540 }} onClick={e => e.stopPropagation()}>
-        <div style={{ padding: '24px 28px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-          <h3 style={{ fontSize: 18, fontWeight: 800, color: '#fff' }}>Add New Employee</h3>
-          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', marginTop: 3 }}>Enroll a new staff member to K-DuraCare</p>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-xs">
+      <div className="w-full max-w-lg rounded-2xl border border-gray-200 bg-white p-6 shadow-theme-xl dark:border-gray-800 dark:bg-gray-900">
+        <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-4 mb-5">
+          <div>
+            <h3 className="text-lg font-bold text-gray-800 dark:text-white">
+              Enroll New Employee
+            </h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Register new hospital personnel into K-DuraCare
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
-        <form onSubmit={handleSubmit} style={{ padding: '24px 28px' }}>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="col-span-2">
-                <label className="input-label">Full Name *</label>
-                <input className="input-field" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="Dr. Ravi Shankar" required />
-              </div>
-              <div>
-                <label className="input-label">Designation *</label>
-                <input className="input-field" value={form.designation} onChange={e => setForm(p => ({ ...p, designation: e.target.value }))} placeholder="Senior Nurse" required />
-              </div>
-              <div>
-                <label className="input-label">Department *</label>
-                <select className="input-field" value={form.department} onChange={e => setForm(p => ({ ...p, department: e.target.value }))}>
-                  {departments.map(d => <option key={d.id} value={d.name}>{d.name}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="input-label">Shift</label>
-                <select className="input-field" value={form.shift} onChange={e => setForm(p => ({ ...p, shift: e.target.value }))}>
-                  {['Morning', 'Evening', 'Night', 'General'].map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="input-label">Status</label>
-                <select className="input-field" value={form.status} onChange={e => setForm(p => ({ ...p, status: e.target.value }))}>
-                  {['Active', 'Probation'].map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="input-label">Phone *</label>
-                <input className="input-field" value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} placeholder="98765 43210" required />
-              </div>
-              <div>
-                <label className="input-label">Join Date</label>
-                <input type="date" className="input-field" value={form.joinDate} onChange={e => setForm(p => ({ ...p, joinDate: e.target.value }))} />
-              </div>
-              <div className="col-span-2">
-                <label className="input-label">Email</label>
-                <input type="email" className="input-field" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} placeholder="employee@kduracare.in" />
-              </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                Full Name *
+              </label>
+              <input
+                className="tail-input text-xs"
+                value={form.name}
+                onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+                placeholder="e.g. Dr. Ravi Shankar"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                Designation *
+              </label>
+              <input
+                className="tail-input text-xs"
+                value={form.designation}
+                onChange={(e) => setForm((p) => ({ ...p, designation: e.target.value }))}
+                placeholder="Senior Consultant"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                Department *
+              </label>
+              <select
+                className="tail-input text-xs"
+                value={form.department}
+                onChange={(e) => setForm((p) => ({ ...p, department: e.target.value }))}
+              >
+                {departments.map((d) => (
+                  <option key={d.id} value={d.name}>
+                    {d.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                Assigned Shift
+              </label>
+              <select
+                className="tail-input text-xs"
+                value={form.shift}
+                onChange={(e) => setForm((p) => ({ ...p, shift: e.target.value }))}
+              >
+                {['Morning', 'Evening', 'Night', 'General'].map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                Contact Phone *
+              </label>
+              <input
+                className="tail-input text-xs"
+                value={form.phone}
+                onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))}
+                placeholder="+91 98765 43210"
+                required
+              />
             </div>
           </div>
-          <div className="flex gap-3 mt-6">
-            <button type="button" className="btn-secondary" style={{ flex: 1, justifyContent: 'center' }} onClick={onClose}>Cancel</button>
-            <button type="submit" disabled={saving} className="btn-primary" style={{ flex: 1, justifyContent: 'center' }}>
-              {saving ? 'Adding...' : <><Save style={{ width: 14, height: 14 }} /> Add Employee</>}
-            </button>
+
+          <div className="flex justify-end gap-2.5 pt-4 border-t border-gray-100 dark:border-gray-800">
+            <Button variant="outline" size="sm" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button variant="primary" size="sm" type="submit" disabled={saving}>
+              {saving ? 'Enrolling...' : 'Save & Issue ID'}
+            </Button>
           </div>
         </form>
       </div>
@@ -111,213 +176,201 @@ function AddEmployeeModal({ onClose, onAdd }) {
 
 export default function Employees() {
   const navigate = useNavigate();
+  const [empList, setEmpList] = useState(initialEmployees);
   const [search, setSearch] = useState('');
-  const [deptFilter, setDeptFilter] = useState('All');
-  const [statusFilter, setStatusFilter] = useState('All');
-  const [viewMode, setViewMode] = useState('grid');
+  const [deptFilter, setDeptFilter] = useState('ALL');
+  const [shiftFilter, setShiftFilter] = useState('ALL');
+  const [viewMode, setViewMode] = useState('list'); // 'list' | 'grid'
+  const [showAddModal, setShowAddModal] = useState(false);
   const [page, setPage] = useState(1);
-  const [showAdd, setShowAdd] = useState(false);
-  const [empList, setEmpList] = useState(employees);
-  const PER_PAGE = 18;
+  const perPage = 10;
 
-  const filtered = empList.filter(e =>
-    (deptFilter === 'All' || e.department === deptFilter) &&
-    (statusFilter === 'All' || e.status === statusFilter) &&
-    (e.name.toLowerCase().includes(search.toLowerCase()) ||
-     e.id.toLowerCase().includes(search.toLowerCase()) ||
-     e.designation.toLowerCase().includes(search.toLowerCase()))
-  );
+  const filtered = empList.filter((e) => {
+    const matchSearch =
+      e.name.toLowerCase().includes(search.toLowerCase()) ||
+      e.id.toLowerCase().includes(search.toLowerCase()) ||
+      e.designation.toLowerCase().includes(search.toLowerCase());
+    const matchDept = deptFilter === 'ALL' || e.department === deptFilter;
+    const matchShift = shiftFilter === 'ALL' || e.shift === shiftFilter;
+    return matchSearch && matchDept && matchShift;
+  });
 
-  const totalPages = Math.ceil(filtered.length / PER_PAGE);
-  const paged = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
-
-  const handleAdd = (newEmp) => {
-    setEmpList(prev => [newEmp, ...prev]);
-  };
-
-  // Avatar gradient per letter
-  const getAvatarGrad = (name) => {
-    const gradients = [
-      'linear-gradient(135deg, #0EA5E9, #6366F1)',
-      'linear-gradient(135deg, #8B5CF6, #EC4899)',
-      'linear-gradient(135deg, #10B981, #06B6D4)',
-      'linear-gradient(135deg, #F59E0B, #EF4444)',
-      'linear-gradient(135deg, #6366F1, #0EA5E9)',
-    ];
-    return gradients[name.charCodeAt(0) % gradients.length];
-  };
+  const totalPages = Math.ceil(filtered.length / perPage);
+  const paginated = filtered.slice((page - 1) * perPage, page * perPage);
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div>
-          <h1 style={{ fontSize: 26, fontWeight: 900, color: '#fff', letterSpacing: '-0.04em' }}>
-            Workforce Directory
-          </h1>
-          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', marginTop: 4 }}>
-            {filtered.length} clinical, administrative & support personnel
-          </p>
-        </div>
-        <button className="btn-primary" onClick={() => setShowAdd(true)}>
-          <Plus style={{ width: 15, height: 15 }} /> Add Employee
-        </button>
-      </div>
+      <PageBreadcrumb
+        pageTitle="Staff & Workforce Directory"
+        items={[{ label: 'Workforce', path: '/employees' }, { label: 'All Employees' }]}
+      />
 
-      {/* Filters */}
-      <div className="glass-card flex flex-wrap items-center gap-3" style={{ padding: '14px 18px' }}>
-        <div style={{ position: 'relative', flex: 1, minWidth: 220 }}>
-          <Search style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', width: 14, height: 14, color: 'rgba(255,255,255,0.3)' }} />
-          <input
-            type="text"
-            placeholder="Search by name, ID or designation..."
-            value={search}
-            onChange={e => { setSearch(e.target.value); setPage(1); }}
-            className="input-field"
-            style={{ paddingLeft: 36, fontSize: 12 }}
-          />
-        </div>
-        <select value={deptFilter} onChange={e => { setDeptFilter(e.target.value); setPage(1); }} className="input-field" style={{ width: 'auto', fontSize: 12 }}>
-          <option value="All">All Departments</option>
-          {departments.map(d => <option key={d.id} value={d.name}>{d.name}</option>)}
-        </select>
-        <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }} className="input-field" style={{ width: 'auto', fontSize: 12 }}>
-          <option value="All">All Statuses</option>
-          {['Active', 'On Leave', 'Inactive', 'Probation'].map(s => <option key={s} value={s}>{s}</option>)}
-        </select>
-        {/* View switcher */}
-        <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: 3, marginLeft: 'auto' }}>
-          {[
-            { id: 'grid', Icon: LayoutGrid },
-            { id: 'table', Icon: List },
-          ].map(({ id, Icon }) => (
-            <button
-              key={id}
-              onClick={() => setViewMode(id)}
-              style={{
-                padding: '6px 10px', borderRadius: 8, border: 'none', cursor: 'pointer', transition: 'all 0.2s',
-                background: viewMode === id ? 'rgba(255,255,255,0.12)' : 'transparent',
-                color: viewMode === id ? '#fff' : 'rgba(255,255,255,0.4)',
+      {/* Filters and Controls Card */}
+      <ComponentCard className="p-4 sm:p-5">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          {/* Search */}
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
               }}
+              placeholder="Search by name, ID or role..."
+              className="tail-input pl-10 text-xs h-10"
+            />
+          </div>
+
+          {/* Department, Shift filters, View toggle & Add button */}
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <select
+              value={deptFilter}
+              onChange={(e) => {
+                setDeptFilter(e.target.value);
+                setPage(1);
+              }}
+              className="tail-input text-xs h-10 w-auto py-1 px-3"
             >
-              <Icon style={{ width: 15, height: 15 }} />
-            </button>
-          ))}
-        </div>
-      </div>
+              <option value="ALL">All Departments ({departments.length})</option>
+              {departments.map((d) => (
+                <option key={d.id} value={d.name}>
+                  {d.name}
+                </option>
+              ))}
+            </select>
 
-      {/* CARD GRID */}
-      {viewMode === 'grid' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-fade-in">
-          {paged.map(emp => {
-            const sc = statusColors[emp.status] || statusColors['Active'];
-            const shiftC = shiftColors[emp.shift] || shiftColors['General'];
-            return (
-              <div
-                key={emp.id}
-                className="glass-card-hover"
-                style={{ padding: 20 }}
-                onClick={() => navigate(`/employees/${emp.id}`)}
+            <select
+              value={shiftFilter}
+              onChange={(e) => {
+                setShiftFilter(e.target.value);
+                setPage(1);
+              }}
+              className="tail-input text-xs h-10 w-auto py-1 px-3"
+            >
+              <option value="ALL">All Shifts</option>
+              <option value="Morning">Morning Shift</option>
+              <option value="Evening">Evening Shift</option>
+              <option value="Night">Night Shift</option>
+              <option value="General">General Shift</option>
+            </select>
+
+            {/* View Mode Toggle */}
+            <div className="flex rounded-lg border border-gray-200 dark:border-gray-800 p-0.5 bg-gray-50 dark:bg-gray-800">
+              <button
+                type="button"
+                onClick={() => setViewMode('list')}
+                className={`p-1.5 rounded-md transition-colors ${
+                  viewMode === 'list'
+                    ? 'bg-white dark:bg-gray-700 text-brand-500 shadow-theme-xs'
+                    : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'
+                }`}
               >
-                {/* Top row */}
-                <div className="flex items-start justify-between gap-3 mb-4">
-                  <div className="flex items-center gap-3">
-                    <div style={{
-                      width: 46, height: 46, borderRadius: 14,
-                      background: getAvatarGrad(emp.name),
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 15, fontWeight: 800, color: '#fff',
-                      flexShrink: 0,
-                      boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
-                      transition: 'transform 0.3s ease',
-                    }}>
-                      {emp.name.split(' ').map(n => n[0]).slice(0, 2).join('')}
-                    </div>
-                    <div style={{ minWidth: 0 }}>
-                      <p style={{ fontSize: 13, fontWeight: 700, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {emp.name}
-                      </p>
-                      <p style={{ fontSize: 10, fontFamily: "'JetBrains Mono', monospace", color: 'rgba(255,255,255,0.3)', marginTop: 2 }}>
-                        {emp.id}
-                      </p>
-                    </div>
-                  </div>
-                  <StatusBadge status={emp.status} />
-                </div>
+                <List className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('grid')}
+                className={`p-1.5 rounded-md transition-colors ${
+                  viewMode === 'grid'
+                    ? 'bg-white dark:bg-gray-700 text-brand-500 shadow-theme-xs'
+                    : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'
+                }`}
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </button>
+            </div>
 
-                {/* Details */}
-                <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 14 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>Role</span>
-                    <span style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.8)', textAlign: 'right', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{emp.designation}</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>Department</span>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: '#38BDF8', background: 'rgba(14,165,233,0.1)', border: '1px solid rgba(14,165,233,0.2)', borderRadius: 6, padding: '2px 8px' }}>{emp.department}</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>Shift</span>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: shiftC.color, background: shiftC.bg, border: `1px solid ${shiftC.border}`, borderRadius: 6, padding: '2px 8px' }}>
-                      {emp.shift || 'General'}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Footer */}
-                <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 12, marginTop: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div className="flex items-center gap-1.5">
-                    <Phone style={{ width: 11, height: 11, color: 'rgba(255,255,255,0.3)' }} />
-                    <span style={{ fontSize: 11, fontFamily: "'JetBrains Mono', monospace", color: 'rgba(255,255,255,0.4)' }}>{emp.phone}</span>
-                  </div>
-                  <div className="flex items-center gap-1" style={{ color: '#38BDF8', fontSize: 11, fontWeight: 700 }}>
-                    View 360° <ChevronRight style={{ width: 12, height: 12 }} />
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+            <Button
+              variant="primary"
+              size="sm"
+              startIcon={<Plus className="h-4 w-4" />}
+              onClick={() => setShowAddModal(true)}
+            >
+              Add Staff
+            </Button>
+          </div>
         </div>
-      ) : (
-        /* TABLE VIEW */
-        <div className="glass-card animate-fade-in" style={{ overflow: 'hidden' }}>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ background: 'rgba(255,255,255,0.03)' }}>
-                  {['Employee', 'Department', 'Designation', 'Shift', 'Status', 'Phone', ''].map(h => (
-                    <th key={h} className="table-header" style={{ textAlign: h === '' ? 'center' : 'left' }}>{h}</th>
-                  ))}
+      </ComponentCard>
+
+      {/* Directory Content (Table or Grid) */}
+      {viewMode === 'list' ? (
+        <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden dark:border-gray-800 dark:bg-white/[0.03] shadow-theme-xs">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-gray-50 dark:bg-gray-800/40 text-gray-500 dark:text-gray-400 uppercase font-semibold tracking-wider border-b border-gray-100 dark:border-gray-800">
+                <tr>
+                  <th className="py-3.5 px-4 sm:px-6">Staff Member</th>
+                  <th className="py-3.5 px-4">Department</th>
+                  <th className="py-3.5 px-4">Shift</th>
+                  <th className="py-3.5 px-4">Status</th>
+                  <th className="py-3.5 px-4">Attendance</th>
+                  <th className="py-3.5 px-4 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody>
-                {paged.map(emp => (
-                  <tr key={emp.id} className="table-row" style={{ cursor: 'pointer' }} onClick={() => navigate(`/employees/${emp.id}`)}>
-                    <td className="table-cell">
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                {paginated.map((emp) => (
+                  <tr
+                    key={emp.id}
+                    onClick={() => navigate(`/employees/${emp.id}`)}
+                    className="hover:bg-gray-50 dark:hover:bg-white/[0.02] cursor-pointer transition-colors"
+                  >
+                    <td className="py-3.5 px-4 sm:px-6">
                       <div className="flex items-center gap-3">
-                        <div style={{ width: 32, height: 32, borderRadius: '50%', background: getAvatarGrad(emp.name), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: '#fff' }}>
-                          {emp.name.charAt(0)}
+                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-500 font-bold text-white text-xs">
+                          {emp.avatar || emp.name.charAt(0)}
                         </div>
                         <div>
-                          <p style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.9)' }}>{emp.name}</p>
-                          <p style={{ fontSize: 10, fontFamily: "'JetBrains Mono', monospace", color: 'rgba(255,255,255,0.3)' }}>{emp.id}</p>
+                          <p className="font-semibold text-gray-800 dark:text-white">
+                            {emp.name}
+                          </p>
+                          <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                            {emp.id} · {emp.designation}
+                          </p>
                         </div>
                       </div>
                     </td>
-                    <td className="table-cell" style={{ fontSize: 12 }}>
-                      <span style={{ color: '#38BDF8', background: 'rgba(14,165,233,0.1)', border: '1px solid rgba(14,165,233,0.15)', borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>{emp.department}</span>
+
+                    <td className="py-3.5 px-4 font-medium text-gray-700 dark:text-gray-300">
+                      {emp.department}
                     </td>
-                    <td className="table-cell" style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>{emp.designation}</td>
-                    <td className="table-cell">
-                      {(() => {
-                        const sc = shiftColors[emp.shift] || shiftColors['General'];
-                        return <span style={{ fontSize: 11, fontWeight: 600, color: sc.color, background: sc.bg, border: `1px solid ${sc.border}`, borderRadius: 6, padding: '2px 8px' }}>{emp.shift || 'General'}</span>;
-                      })()}
+
+                    <td className="py-3.5 px-4">
+                      <Badge color={shiftColorMap[emp.shift] || 'light'} size="sm">
+                        {emp.shift}
+                      </Badge>
                     </td>
-                    <td className="table-cell"><StatusBadge status={emp.status} /></td>
-                    <td className="table-cell" style={{ fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: 'rgba(255,255,255,0.4)' }}>{emp.phone}</td>
-                    <td className="table-cell" style={{ textAlign: 'center' }}>
-                      <button className="btn-icon" style={{ padding: 6 }} onClick={e => { e.stopPropagation(); navigate(`/employees/${emp.id}`); }}>
-                        <ChevronRight style={{ width: 14, height: 14 }} />
+
+                    <td className="py-3.5 px-4">
+                      <Badge color={statusColorMap[emp.status] || 'light'} size="sm">
+                        {emp.status}
+                      </Badge>
+                    </td>
+
+                    <td className="py-3.5 px-4">
+                      <div className="flex items-center gap-2">
+                        <div className="w-16 h-1.5 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+                          <div
+                            className="h-full bg-emerald-500 rounded-full"
+                            style={{ width: `${emp.attendancePercent}%` }}
+                          />
+                        </div>
+                        <span className="font-mono text-[11px] text-gray-600 dark:text-gray-400">
+                          {emp.attendancePercent}%
+                        </span>
+                      </div>
+                    </td>
+
+                    <td className="py-3.5 px-4 text-right">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/employees/${emp.id}`);
+                        }}
+                        className="p-1 rounded-lg text-gray-400 hover:text-brand-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                      >
+                        <ChevronRight className="h-4 w-4" />
                       </button>
                     </td>
                   </tr>
@@ -325,34 +378,77 @@ export default function Employees() {
               </tbody>
             </table>
           </div>
+
+          {/* Pagination */}
+          <div className="flex items-center justify-between border-t border-gray-100 dark:border-gray-800 px-4 py-3 sm:px-6">
+            <span className="text-xs text-gray-500 dark:text-gray-400">
+              Showing {(page - 1) * perPage + 1} to{' '}
+              {Math.min(page * perPage, filtered.length)} of {filtered.length} staff
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                disabled={page === 1}
+                onClick={() => setPage((p) => p - 1)}
+                className="flex items-center gap-1 rounded-lg border border-gray-200 dark:border-gray-700 px-2.5 py-1 text-xs text-gray-600 dark:text-gray-300 disabled:opacity-40"
+              >
+                <ChevronLeft className="h-3.5 w-3.5" /> Previous
+              </button>
+              <span className="text-xs text-gray-700 dark:text-gray-300 font-medium">
+                {page} / {totalPages || 1}
+              </span>
+              <button
+                disabled={page >= totalPages}
+                onClick={() => setPage((p) => p + 1)}
+                className="flex items-center gap-1 rounded-lg border border-gray-200 dark:border-gray-700 px-2.5 py-1 text-xs text-gray-600 dark:text-gray-300 disabled:opacity-40"
+              >
+                Next <ChevronRight className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* Grid Mode */
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5">
+          {paginated.map((emp) => (
+            <div
+              key={emp.id}
+              onClick={() => navigate(`/employees/${emp.id}`)}
+              className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] shadow-theme-xs hover:border-brand-400 dark:hover:border-brand-500/40 cursor-pointer transition-all hover:shadow-theme-md"
+            >
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-500 text-white font-bold text-sm shadow-theme-xs">
+                  {emp.avatar || emp.name.charAt(0)}
+                </div>
+                <Badge color={statusColorMap[emp.status] || 'light'} size="sm">
+                  {emp.status}
+                </Badge>
+              </div>
+
+              <h4 className="text-sm font-bold text-gray-800 dark:text-white truncate">
+                {emp.name}
+              </h4>
+              <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">
+                {emp.designation}
+              </p>
+
+              <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between text-xs">
+                <span className="text-gray-500 dark:text-gray-400">{emp.department}</span>
+                <Badge color={shiftColorMap[emp.shift] || 'light'} size="sm">
+                  {emp.shift}
+                </Badge>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
-      {/* Pagination */}
-      <div className="glass-card flex items-center justify-between flex-wrap gap-3" style={{ padding: '14px 20px' }}>
-        <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>
-          Showing <strong style={{ color: '#fff' }}>{(page - 1) * PER_PAGE + 1}</strong>–<strong style={{ color: '#fff' }}>{Math.min(page * PER_PAGE, filtered.length)}</strong> of <span style={{ color: '#38BDF8', fontWeight: 700 }}>{filtered.length}</span> staff
-        </p>
-        <div className="flex items-center gap-2">
-          <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="btn-secondary" style={{ fontSize: 12, padding: '7px 14px' }}>
-            <ChevronLeft style={{ width: 13, height: 13 }} /> Prev
-          </button>
-          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => i + Math.max(1, page - 2)).filter(n => n <= totalPages).map(n => (
-            <button key={n} onClick={() => setPage(n)} style={{
-              width: 32, height: 32, borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer',
-              background: n === page ? 'linear-gradient(135deg, #0EA5E9, #6366F1)' : 'rgba(255,255,255,0.05)',
-              border: `1px solid ${n === page ? 'transparent' : 'rgba(255,255,255,0.08)'}`,
-              color: n === page ? '#fff' : 'rgba(255,255,255,0.5)',
-              transition: 'all 0.2s ease',
-            }}>{n}</button>
-          ))}
-          <button disabled={page === totalPages} onClick={() => setPage(p => p + 1)} className="btn-secondary" style={{ fontSize: 12, padding: '7px 14px' }}>
-            Next <ChevronRight style={{ width: 13, height: 13 }} />
-          </button>
-        </div>
-      </div>
-
-      {showAdd && <AddEmployeeModal onClose={() => setShowAdd(false)} onAdd={handleAdd} />}
+      {/* Modal */}
+      {showAddModal && (
+        <AddEmployeeModal
+          onClose={() => setShowAddModal(false)}
+          onAdd={(newEmp) => setEmpList((prev) => [newEmp, ...prev])}
+        />
+      )}
     </div>
   );
 }

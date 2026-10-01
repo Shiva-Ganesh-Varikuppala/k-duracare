@@ -1,9 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Sparkles, Bot, User, Calendar, Clock, Wallet, Activity, MapPin, Phone, Mail, Briefcase, TrendingUp, AlertCircle } from 'lucide-react';
+import {
+  ArrowLeft, Sparkles, User, Calendar, Clock, Wallet, Activity,
+  Briefcase, TrendingUp, AlertCircle, Phone, Mail, MapPin, CheckCircle
+} from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, PieChart, Pie, Cell } from 'recharts';
 import { employees } from '../data/employees';
 import { generateEmployeeSummary } from '../services/aiService';
+import PageBreadcrumb from '../components/common/PageBreadcrumb';
+import Badge from '../components/ui/badge/Badge';
+import Button from '../components/ui/button/Button';
 
 const TABS = ['Profile', 'Attendance', 'Leave', 'Shift', 'Payroll', 'AI Insights'];
 
@@ -15,9 +21,9 @@ const attendanceMonthData = [
 ];
 
 const shiftData = [
-  { name: 'Morning', value: 12, color: '#F59E0B' },
-  { name: 'Evening', value: 5, color: '#0EA5E9' },
-  { name: 'Night', value: 3, color: '#8B5CF6' },
+  { name: 'Morning', value: 12, color: '#f59e0b' },
+  { name: 'Evening', value: 5, color: '#0ea5e9' },
+  { name: 'Night', value: 3, color: '#8b5cf6' },
 ];
 
 const operationalEvents = [
@@ -46,7 +52,7 @@ export default function Employee360() {
         setAiLoading(false);
       });
     }
-  }, [activeTab, employee]);
+  }, [activeTab, employee, aiSummary]);
 
   const gross = employee.basic + employee.hra + employee.allowance;
   const pf = Math.round(employee.basic * 0.075);
@@ -54,76 +60,109 @@ export default function Employee360() {
   const net = gross - pf - esi - 200;
 
   return (
-    <div className="space-y-5">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <button onClick={() => navigate('/employees')} className="btn-secondary p-2">
-          <ArrowLeft className="w-4 h-4" />
-        </button>
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-white">Employee 360°</h1>
-            <span className="text-xs bg-indigo-500/10 border border-indigo-500/20 rounded-full px-2 py-0.5 text-indigo-400 flex items-center gap-1">
-              <Sparkles className="w-3 h-3" /> AI Enhanced
-            </span>
-          </div>
-          <p className="text-sm text-slate-400">{employee.id}</p>
-        </div>
+    <div className="space-y-6">
+      {/* Breadcrumb & Navigation */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <PageBreadcrumb
+          pageTitle="Employee 360°"
+          breadcrumbs={[
+            { label: 'Workforce', path: '/employees' },
+            { label: employee.name }
+          ]}
+        />
+        <Button
+          variant="outline"
+          size="sm"
+          startIcon={<ArrowLeft className="w-4 h-4" />}
+          onClick={() => navigate('/employees')}
+        >
+          Back to Directory
+        </Button>
       </div>
 
-      {/* Profile Card */}
-      <div className="glass-card p-6">
-        <div className="flex items-start gap-5">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center text-2xl font-bold text-white flex-shrink-0">
-            {employee.name.charAt(0)}
-          </div>
-          <div className="flex-1">
-            <h2 className="text-xl font-bold text-white">{employee.name}</h2>
-            <p className="text-slate-400 text-sm">{employee.designation} · {employee.department}</p>
-            <div className="flex flex-wrap gap-2 mt-3">
-              <span className={`text-xs px-2 py-0.5 rounded-full border ${employee.status === 'Active' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border-amber-500/30'}`}>
-                {employee.status}
-              </span>
-              <span className="text-xs bg-navy-700 border border-navy-500 rounded-full px-2 py-0.5 text-slate-400">{employee.employmentType}</span>
-              <span className={`text-xs px-2 py-0.5 rounded-full border ${
-                employee.shift === 'Morning' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' :
-                employee.shift === 'Evening' ? 'bg-sky-500/20 text-sky-400 border-sky-500/30' :
-                employee.shift === 'Night' ? 'bg-purple-500/20 text-purple-400 border-purple-500/30' :
-                'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
-              }`}>
-                {employee.shift} Shift
-              </span>
+      {/* Hero Profile Overview Card */}
+      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs dark:border-gray-800 dark:bg-white/[0.03]">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-5">
+            <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 text-2xl font-bold text-white shadow-theme-xs">
+              {employee.name.charAt(0)}
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-2.5">
+                <h1 className="text-xl font-bold text-gray-900 dark:text-white sm:text-2xl">
+                  {employee.name}
+                </h1>
+                <Badge variant="light" color="primary" size="sm" startIcon={<Sparkles className="w-3 h-3" />}>
+                  AI Monitored
+                </Badge>
+              </div>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                <span className="font-mono text-gray-700 dark:text-gray-300 font-semibold">{employee.id}</span> · {employee.designation} · {employee.department}
+              </p>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <Badge variant="light" color={employee.status === 'Active' ? 'success' : 'warning'}>
+                  {employee.status}
+                </Badge>
+                <Badge variant="light" color="light">
+                  {employee.employmentType}
+                </Badge>
+                <Badge
+                  variant="light"
+                  color={
+                    employee.shift === 'Morning' ? 'warning' :
+                    employee.shift === 'Evening' ? 'info' :
+                    employee.shift === 'Night' ? 'purple' : 'success'
+                  }
+                >
+                  {employee.shift} Shift
+                </Badge>
+              </div>
             </div>
           </div>
-          <div className="grid grid-cols-4 gap-4 text-center">
-            {[
-              { label: 'Attendance', value: `${employee.attendancePercent}%`, color: 'text-emerald-400' },
-              { label: 'Leave Left', value: `${12 - (employee.leaveUsed || 0)} days`, color: 'text-sky-400' },
-              { label: 'Overtime', value: `${employee.overtimeHours}h`, color: 'text-amber-400' },
-              { label: 'Late', value: employee.lateCount, color: 'text-orange-400' },
-            ].map(m => (
-              <div key={m.label} className="glass-card p-3">
-                <p className={`text-xl font-bold ${m.color}`}>{m.value}</p>
-                <p className="text-xs text-slate-500 mt-0.5">{m.label}</p>
-              </div>
-            ))}
+
+          {/* Quick Metrics */}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:gap-4">
+            <div className="rounded-xl border border-gray-200 bg-gray-50/60 p-3.5 text-center dark:border-gray-800 dark:bg-white/[0.02]">
+              <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400 font-mono">
+                {employee.attendancePercent}%
+              </p>
+              <p className="mt-0.5 text-xs font-medium text-gray-500 dark:text-gray-400">Attendance</p>
+            </div>
+            <div className="rounded-xl border border-gray-200 bg-gray-50/60 p-3.5 text-center dark:border-gray-800 dark:bg-white/[0.02]">
+              <p className="text-xl font-bold text-brand-600 dark:text-brand-400 font-mono">
+                {12 - (employee.leaveUsed || 0)}d
+              </p>
+              <p className="mt-0.5 text-xs font-medium text-gray-500 dark:text-gray-400">Leaves Left</p>
+            </div>
+            <div className="rounded-xl border border-gray-200 bg-gray-50/60 p-3.5 text-center dark:border-gray-800 dark:bg-white/[0.02]">
+              <p className="text-xl font-bold text-amber-600 dark:text-amber-400 font-mono">
+                {employee.overtimeHours}h
+              </p>
+              <p className="mt-0.5 text-xs font-medium text-gray-500 dark:text-gray-400">Overtime</p>
+            </div>
+            <div className="rounded-xl border border-gray-200 bg-gray-50/60 p-3.5 text-center dark:border-gray-800 dark:bg-white/[0.02]">
+              <p className="text-xl font-bold text-rose-600 dark:text-rose-400 font-mono">
+                {employee.lateCount}
+              </p>
+              <p className="mt-0.5 text-xs font-medium text-gray-500 dark:text-gray-400">Late Incidents</p>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-navy-800 border border-navy-600 rounded-xl p-1 w-fit">
+      <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-gray-200 bg-gray-100 p-1.5 dark:border-gray-800 dark:bg-gray-900/60 w-fit">
         {TABS.map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5 ${
+            className={`inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs sm:text-sm font-semibold transition-all ${
               activeTab === tab
-                ? 'bg-sky-500 text-white shadow-lg'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-navy-700'
+                ? 'bg-white text-brand-600 shadow-xs dark:bg-brand-500 dark:text-white'
+                : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
             }`}
           >
-            {tab === 'AI Insights' && <Sparkles className="w-3 h-3" />}
+            {tab === 'AI Insights' && <Sparkles className="w-3.5 h-3.5 text-brand-500 dark:text-brand-300" />}
             {tab}
           </button>
         ))}
@@ -131,79 +170,113 @@ export default function Employee360() {
 
       {/* Tab Content */}
       {activeTab === 'Profile' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          <div className="glass-card p-5 space-y-4">
-            <p className="section-title flex items-center gap-2"><User className="w-4 h-4 text-sky-400" /> Personal Information</p>
-            {[
-              { label: 'Full Name', value: employee.name },
-              { label: 'Blood Group', value: employee.bloodGroup },
-              { label: 'Gender', value: employee.gender },
-              { label: 'Phone', value: employee.phone },
-              { label: 'Email', value: employee.email },
-              { label: 'Address', value: employee.address },
-              { label: 'Emergency Contact', value: employee.emergencyContact },
-            ].map(f => (
-              <div key={f.label} className="flex justify-between items-start border-b border-navy-700 pb-3">
-                <span className="text-xs text-slate-500">{f.label}</span>
-                <span className="text-xs text-slate-200 text-right max-w-[60%]">{f.value}</span>
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          {/* Personal Information */}
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs dark:border-gray-800 dark:bg-white/[0.03]">
+            <div className="flex items-center gap-2.5 pb-4 border-b border-gray-100 dark:border-gray-800">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400">
+                <User className="w-4 h-4" />
               </div>
-            ))}
+              <h2 className="text-base font-bold text-gray-900 dark:text-white">Personal Information</h2>
+            </div>
+            <div className="mt-4 divide-y divide-gray-100 dark:divide-gray-800">
+              {[
+                { label: 'Full Legal Name', value: employee.name },
+                { label: 'Blood Group', value: employee.bloodGroup },
+                { label: 'Gender', value: employee.gender },
+                { label: 'Phone Contact', value: employee.phone },
+                { label: 'Official Email', value: employee.email },
+                { label: 'Residential Address', value: employee.address },
+                { label: 'Emergency Contact', value: employee.emergencyContact },
+              ].map(f => (
+                <div key={f.label} className="flex items-center justify-between py-3 text-xs sm:text-sm">
+                  <span className="text-gray-500 dark:text-gray-400">{f.label}</span>
+                  <span className="font-medium text-gray-800 dark:text-gray-200 text-right max-w-[65%]">{f.value}</span>
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="glass-card p-5 space-y-4">
-            <p className="section-title flex items-center gap-2"><Briefcase className="w-4 h-4 text-sky-400" /> Employment Information</p>
-            {[
-              { label: 'Employee ID', value: employee.id },
-              { label: 'Department', value: employee.department },
-              { label: 'Designation', value: employee.designation },
-              { label: 'Employment Type', value: employee.employmentType },
-              { label: 'Joining Date', value: employee.joiningDate },
-              { label: 'Shift', value: `${employee.shift} (${employee.shiftCode})` },
-              { label: 'PF Number', value: employee.pfNumber },
-              { label: 'ESI Number', value: employee.esiNumber },
-            ].map(f => (
-              <div key={f.label} className="flex justify-between items-start border-b border-navy-700 pb-3">
-                <span className="text-xs text-slate-500">{f.label}</span>
-                <span className="text-xs text-slate-200 text-right max-w-[60%]">{f.value}</span>
+
+          {/* Employment Information */}
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs dark:border-gray-800 dark:bg-white/[0.03]">
+            <div className="flex items-center gap-2.5 pb-4 border-b border-gray-100 dark:border-gray-800">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400">
+                <Briefcase className="w-4 h-4" />
               </div>
-            ))}
+              <h2 className="text-base font-bold text-gray-900 dark:text-white">Hospital Placement & Roster</h2>
+            </div>
+            <div className="mt-4 divide-y divide-gray-100 dark:divide-gray-800">
+              {[
+                { label: 'Staff ID', value: employee.id, mono: true },
+                { label: 'Assigned Department', value: employee.department },
+                { label: 'Clinical Role', value: employee.designation },
+                { label: 'Employment Status', value: employee.employmentType },
+                { label: 'Date of Joining', value: employee.joiningDate },
+                { label: 'Current Roster Shift', value: `${employee.shift} (${employee.shiftCode})` },
+                { label: 'Provident Fund (PF)', value: employee.pfNumber, mono: true },
+                { label: 'ESI Insurance No.', value: employee.esiNumber, mono: true },
+              ].map(f => (
+                <div key={f.label} className="flex items-center justify-between py-3 text-xs sm:text-sm">
+                  <span className="text-gray-500 dark:text-gray-400">{f.label}</span>
+                  <span className={`font-medium text-gray-800 dark:text-gray-200 text-right ${f.mono ? 'font-mono' : ''}`}>
+                    {f.value}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}
 
       {activeTab === 'Attendance' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          <div className="glass-card p-5">
-            <p className="section-title mb-1">September 2026 — Summary</p>
-            <p className="section-subtitle mb-4">Monthly attendance breakdown</p>
-            <div className="grid grid-cols-3 gap-3 mb-5">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          {/* Summary & Recharts */}
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs dark:border-gray-800 dark:bg-white/[0.03]">
+            <div className="mb-4">
+              <h2 className="text-base font-bold text-gray-900 dark:text-white">September 2026 — Attendance Summary</h2>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Weekly breakdown of presence, leave, and absence</p>
+            </div>
+            <div className="grid grid-cols-3 gap-3 mb-6">
               {[
-                { label: 'Present', value: employee.present, color: 'text-emerald-400' },
-                { label: 'Absent', value: employee.absent, color: 'text-red-400' },
-                { label: 'Leave', value: employee.leaveUsed, color: 'text-amber-400' },
-                { label: 'Late', value: employee.lateCount, color: 'text-orange-400' },
-                { label: 'Weekly Off', value: 4, color: 'text-slate-400' },
-                { label: 'Holiday', value: 2, color: 'text-sky-400' },
+                { label: 'Present', value: employee.present, color: 'text-emerald-600 dark:text-emerald-400' },
+                { label: 'Absent', value: employee.absent, color: 'text-rose-600 dark:text-rose-400' },
+                { label: 'Leave', value: employee.leaveUsed, color: 'text-amber-600 dark:text-amber-400' },
+                { label: 'Late', value: employee.lateCount, color: 'text-orange-600 dark:text-orange-400' },
+                { label: 'Weekly Off', value: 4, color: 'text-gray-600 dark:text-gray-400' },
+                { label: 'Holiday', value: 2, color: 'text-brand-600 dark:text-brand-400' },
               ].map(m => (
-                <div key={m.label} className="glass-card p-3 text-center">
-                  <p className={`text-xl font-bold ${m.color}`}>{m.value}</p>
-                  <p className="text-xs text-slate-500">{m.label}</p>
+                <div key={m.label} className="rounded-xl border border-gray-200 bg-gray-50/60 p-3 text-center dark:border-gray-800 dark:bg-white/[0.02]">
+                  <p className={`text-lg font-bold font-mono ${m.color}`}>{m.value}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{m.label}</p>
                 </div>
               ))}
             </div>
-            <ResponsiveContainer width="100%" height={160}>
-              <BarChart data={attendanceMonthData}>
-                <XAxis dataKey="week" tick={{ fill: '#64748B', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: '#64748B', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <Tooltip contentStyle={{ background: '#1E2A45', border: '1px solid #253355', borderRadius: '8px', color: '#E2E8F0', fontSize: '12px' }} />
-                <Bar dataKey="present" fill="#10B981" radius={[3, 3, 0, 0]} name="Present" />
-                <Bar dataKey="absent" fill="#EF4444" radius={[3, 3, 0, 0]} name="Absent" />
-                <Bar dataKey="leave" fill="#F59E0B" radius={[3, 3, 0, 0]} name="Leave" />
-              </BarChart>
-            </ResponsiveContainer>
+            <div className="h-44 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={attendanceMonthData}>
+                  <XAxis dataKey="week" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
+                  <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#1f2937',
+                      border: '1px solid #374151',
+                      borderRadius: '0.75rem',
+                      color: '#f9fafb',
+                      fontSize: '12px',
+                    }}
+                  />
+                  <Bar dataKey="present" fill="#10b981" radius={[4, 4, 0, 0]} name="Present" />
+                  <Bar dataKey="absent" fill="#ef4444" radius={[4, 4, 0, 0]} name="Absent" />
+                  <Bar dataKey="leave" fill="#f59e0b" radius={[4, 4, 0, 0]} name="Leave" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
-          <div className="glass-card p-5">
-            <p className="section-title mb-4">Attendance Log</p>
-            <div className="space-y-2 max-h-80 overflow-y-auto">
+
+          {/* Attendance Log Table */}
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs dark:border-gray-800 dark:bg-white/[0.03]">
+            <h2 className="text-base font-bold text-gray-900 dark:text-white mb-4">Detailed Shift Activity Log</h2>
+            <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
               {Array.from({ length: 20 }, (_, i) => {
                 const day = i + 1;
                 const date = new Date(2026, 8, day);
@@ -212,16 +285,23 @@ export default function Employee360() {
                 const checkIn = status === 'Present' ? '07:04' : status === 'Late' ? '07:42' : null;
                 const checkOut = checkIn ? '14:08' : null;
                 return (
-                  <div key={day} className="flex items-center gap-3 py-2 border-b border-navy-700 text-xs">
-                    <span className="text-slate-500 w-12">Sep {day}</span>
-                    <span className={`flex-shrink-0 ${
-                      status === 'Present' ? 'badge-present' :
-                      status === 'Late' ? 'badge-late' :
-                      status === 'Leave' ? 'badge-leave' :
-                      status === 'Holiday' ? 'text-sky-400 text-xs font-semibold' :
-                      'badge-off'
-                    }`}>{status}</span>
-                    {checkIn && <span className="text-slate-400">{checkIn} → {checkOut}</span>}
+                  <div key={day} className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800 text-xs">
+                    <span className="font-mono text-gray-500 dark:text-gray-400 w-16">Sep {String(day).padStart(2, '0')}</span>
+                    <Badge
+                      variant="light"
+                      color={
+                        status === 'Present' ? 'success' :
+                        status === 'Late' ? 'warning' :
+                        status === 'Leave' ? 'purple' :
+                        status === 'Holiday' ? 'info' : 'light'
+                      }
+                      size="sm"
+                    >
+                      {status}
+                    </Badge>
+                    <span className="font-mono text-gray-600 dark:text-gray-300">
+                      {checkIn ? `${checkIn} → ${checkOut}` : '—'}
+                    </span>
                   </div>
                 );
               })}
@@ -231,155 +311,220 @@ export default function Employee360() {
       )}
 
       {activeTab === 'Leave' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          <div className="glass-card p-5">
-            <p className="section-title mb-4">Leave Balance</p>
-            {[
-              { type: 'Casual Leave', used: employee.leaveUsed, total: 12 },
-              { type: 'Sick Leave', used: 2, total: 12 },
-              { type: 'Earned Leave', used: 5, total: 15 },
-              { type: 'Emergency Leave', used: 0, total: 3 },
-            ].map(l => (
-              <div key={l.type} className="mb-4">
-                <div className="flex justify-between text-xs mb-1">
-                  <span className="text-slate-300">{l.type}</span>
-                  <span className="text-slate-400">{l.used} used / {l.total - l.used} available</span>
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          {/* Balances */}
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs dark:border-gray-800 dark:bg-white/[0.03]">
+            <h2 className="text-base font-bold text-gray-900 dark:text-white mb-4">Annual Leave Quota Balance</h2>
+            <div className="space-y-4">
+              {[
+                { type: 'Casual Leave (CL)', used: employee.leaveUsed, total: 12, color: 'bg-brand-500' },
+                { type: 'Sick Leave (SL)', used: 2, total: 12, color: 'bg-rose-500' },
+                { type: 'Earned Leave (EL)', used: 5, total: 15, color: 'bg-emerald-500' },
+                { type: 'Emergency / Duty Leave', used: 0, total: 3, color: 'bg-amber-500' },
+              ].map(l => (
+                <div key={l.type} className="rounded-xl border border-gray-100 bg-gray-50/50 p-3.5 dark:border-gray-800 dark:bg-white/[0.02]">
+                  <div className="flex justify-between text-xs font-semibold mb-2">
+                    <span className="text-gray-700 dark:text-gray-200">{l.type}</span>
+                    <span className="font-mono text-gray-500 dark:text-gray-400">
+                      {l.used} used / {l.total - l.used} available
+                    </span>
+                  </div>
+                  <div className="h-2 w-full rounded-full bg-gray-200 dark:bg-gray-800 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full ${l.color}`}
+                      style={{ width: `${(l.used / l.total) * 100}%` }}
+                    />
+                  </div>
                 </div>
-                <div className="h-2 bg-navy-700 rounded-full overflow-hidden">
-                  <div className="h-full bg-sky-500 rounded-full" style={{ width: `${(l.used / l.total) * 100}%` }} />
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-          <div className="glass-card p-5">
-            <p className="section-title mb-4">Leave History</p>
-            {[
-              { date: '20 Sep', type: 'Casual Leave', status: 'Approved', days: 1 },
-              { date: '02 Sep', type: 'Sick Leave', status: 'Approved', days: 2 },
-              { date: '10 Aug', type: 'Casual Leave', status: 'Rejected', days: 2 },
-              { date: '15 Jul', type: 'Earned Leave', status: 'Approved', days: 3 },
-            ].map((l, i) => (
-              <div key={i} className="flex items-center gap-3 py-3 border-b border-navy-700 text-xs">
-                <span className="text-slate-500 w-16">{l.date}</span>
-                <span className="flex-1 text-slate-300">{l.type}</span>
-                <span className="text-slate-400">{l.days}d</span>
-                <span className={l.status === 'Approved' ? 'badge-present' : 'badge-absent'}>{l.status}</span>
-              </div>
-            ))}
+
+          {/* History */}
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs dark:border-gray-800 dark:bg-white/[0.03]">
+            <h2 className="text-base font-bold text-gray-900 dark:text-white mb-4">Leave Application Audit Trail</h2>
+            <div className="divide-y divide-gray-100 dark:divide-gray-800">
+              {[
+                { date: '20 Sep', type: 'Casual Leave', status: 'Approved', days: 1 },
+                { date: '02 Sep', type: 'Sick Leave', status: 'Approved', days: 2 },
+                { date: '10 Aug', type: 'Casual Leave', status: 'Rejected', days: 2 },
+                { date: '15 Jul', type: 'Earned Leave', status: 'Approved', days: 3 },
+              ].map((l, i) => (
+                <div key={i} className="flex items-center justify-between py-3 text-xs sm:text-sm">
+                  <span className="font-mono text-gray-500 dark:text-gray-400">{l.date}</span>
+                  <span className="font-medium text-gray-800 dark:text-gray-200">{l.type}</span>
+                  <span className="font-mono text-gray-500 dark:text-gray-400">{l.days} day(s)</span>
+                  <Badge variant="light" color={l.status === 'Approved' ? 'success' : 'error'} size="sm">
+                    {l.status}
+                  </Badge>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}
 
       {activeTab === 'Shift' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          <div className="glass-card p-5">
-            <p className="section-title mb-4">Shift Distribution — September</p>
-            <ResponsiveContainer width="100%" height={200}>
-              <PieChart>
-                <Pie data={shiftData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value" paddingAngle={4}>
-                  {shiftData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
-                </Pie>
-                <Tooltip contentStyle={{ background: '#1E2A45', border: '1px solid #253355', borderRadius: '8px', color: '#E2E8F0', fontSize: '12px' }} />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="flex gap-4 justify-center mt-2">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          {/* Shift Distribution */}
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs dark:border-gray-800 dark:bg-white/[0.03]">
+            <h2 className="text-base font-bold text-gray-900 dark:text-white mb-4">Shift Distribution — September</h2>
+            <div className="h-48 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={shiftData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={55}
+                    outerRadius={80}
+                    dataKey="value"
+                    paddingAngle={4}
+                  >
+                    {shiftData.map((entry, i) => (
+                      <Cell key={i} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#1f2937',
+                      border: '1px solid #374151',
+                      borderRadius: '0.75rem',
+                      color: '#f9fafb',
+                      fontSize: '12px',
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="flex gap-4 justify-center mt-3">
               {shiftData.map(s => (
-                <div key={s.name} className="flex items-center gap-1.5 text-xs text-slate-400">
-                  <div className="w-2 h-2 rounded-full" style={{ background: s.color }} />
-                  {s.name}: {s.value}
+                <div key={s.name} className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400 font-medium">
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ background: s.color }} />
+                  {s.name}: <span className="font-mono font-bold text-gray-800 dark:text-gray-200">{s.value}</span>
                 </div>
               ))}
             </div>
           </div>
-          <div className="glass-card p-5">
-            <p className="section-title mb-4">Recent Shift History</p>
-            {[14,15,16,17,18,19,20].map(d => {
-              const shift = d <= 17 ? 'Morning' : d === 18 ? 'Evening' : d === 19 ? 'Night' : 'Morning';
-              const color = shift === 'Morning' ? 'text-amber-400' : shift === 'Evening' ? 'text-sky-400' : 'text-purple-400';
-              return (
-                <div key={d} className="flex items-center gap-3 py-2.5 border-b border-navy-700 text-xs">
-                  <span className="text-slate-500 w-12">Sep {d}</span>
-                  <span className={`font-medium ${color}`}>{shift}</span>
-                  <span className="text-slate-500 ml-auto">{shift === 'Morning' ? '07:00–14:00' : shift === 'Evening' ? '13:00–20:00' : '19:00–08:00'}</span>
-                </div>
-              );
-            })}
+
+          {/* Recent Shifts */}
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs dark:border-gray-800 dark:bg-white/[0.03]">
+            <h2 className="text-base font-bold text-gray-900 dark:text-white mb-4">Assigned Shift Schedule</h2>
+            <div className="divide-y divide-gray-100 dark:divide-gray-800">
+              {[14, 15, 16, 17, 18, 19, 20].map(d => {
+                const shift = d <= 17 ? 'Morning' : d === 18 ? 'Evening' : d === 19 ? 'Night' : 'Morning';
+                const time = shift === 'Morning' ? '07:00–14:00' : shift === 'Evening' ? '13:00–20:00' : '19:00–08:00';
+                return (
+                  <div key={d} className="flex items-center justify-between py-2.5 text-xs sm:text-sm">
+                    <span className="font-mono text-gray-500 dark:text-gray-400">Sep {d}</span>
+                    <Badge
+                      variant="light"
+                      color={shift === 'Morning' ? 'warning' : shift === 'Evening' ? 'info' : 'purple'}
+                      size="sm"
+                    >
+                      {shift}
+                    </Badge>
+                    <span className="font-mono text-gray-600 dark:text-gray-400">{time}</span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
 
       {activeTab === 'Payroll' && (
-        <div className="glass-card p-6 max-w-xl">
-          <p className="section-title mb-1">September 2026 Payroll</p>
-          <p className="section-subtitle mb-5">Calculated payslip summary</p>
-          <div className="space-y-3">
-            <div className="bg-navy-700/50 rounded-lg p-4">
-              <p className="text-xs font-semibold text-emerald-400 mb-3">EARNINGS</p>
+        <div className="max-w-2xl rounded-2xl border border-gray-200 bg-white p-6 shadow-xs dark:border-gray-800 dark:bg-white/[0.03]">
+          <div className="mb-5 pb-4 border-b border-gray-100 dark:border-gray-800">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">September 2026 Payroll Statement</h2>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Calculated payslip conforming to Indian statutory deductions</p>
+          </div>
+
+          <div className="space-y-4">
+            {/* Earnings */}
+            <div className="rounded-xl border border-gray-200 bg-gray-50/60 p-4 dark:border-gray-800 dark:bg-white/[0.02]">
+              <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-3">Gross Earnings</p>
               {[
                 ['Basic Salary', employee.basic],
-                ['HRA', employee.hra],
+                ['House Rent Allowance (HRA)', employee.hra],
                 ['Special Allowance', employee.allowance],
-                ['Overtime', Math.round(employee.overtimeHours * 200)],
+                ['Overtime Pay', Math.round(employee.overtimeHours * 200)],
               ].map(([label, amount]) => (
-                <div key={label} className="flex justify-between text-sm py-1.5 border-b border-navy-600">
-                  <span className="text-slate-300">{label}</span>
-                  <span className="text-slate-200">₹{amount.toLocaleString('en-IN')}</span>
+                <div key={label} className="flex justify-between py-1.5 text-xs sm:text-sm border-b border-gray-200/60 dark:border-gray-700/60">
+                  <span className="text-gray-600 dark:text-gray-400">{label}</span>
+                  <span className="font-mono font-medium text-gray-900 dark:text-gray-100">₹{amount.toLocaleString('en-IN')}</span>
                 </div>
               ))}
-              <div className="flex justify-between text-sm pt-2 font-bold">
-                <span className="text-slate-200">Gross</span>
-                <span className="text-emerald-400">₹{(gross + Math.round(employee.overtimeHours * 200)).toLocaleString('en-IN')}</span>
+              <div className="flex justify-between pt-2.5 text-sm font-bold">
+                <span className="text-gray-900 dark:text-white">Gross Total</span>
+                <span className="font-mono text-emerald-600 dark:text-emerald-400">
+                  ₹{(gross + Math.round(employee.overtimeHours * 200)).toLocaleString('en-IN')}
+                </span>
               </div>
             </div>
-            <div className="bg-navy-700/50 rounded-lg p-4">
-              <p className="text-xs font-semibold text-red-400 mb-3">DEDUCTIONS</p>
+
+            {/* Deductions */}
+            <div className="rounded-xl border border-gray-200 bg-gray-50/60 p-4 dark:border-gray-800 dark:bg-white/[0.02]">
+              <p className="text-xs font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider mb-3">Statutory Deductions</p>
               {[
-                ['Provident Fund', pf],
-                ['ESI', esi],
+                ['Employee PF Contribution', pf],
+                ['ESI Medical Contribution', esi],
                 ['Professional Tax', 200],
               ].map(([label, amount]) => (
-                <div key={label} className="flex justify-between text-sm py-1.5 border-b border-navy-600">
-                  <span className="text-slate-300">{label}</span>
-                  <span className="text-red-400">- ₹{amount.toLocaleString('en-IN')}</span>
+                <div key={label} className="flex justify-between py-1.5 text-xs sm:text-sm border-b border-gray-200/60 dark:border-gray-700/60">
+                  <span className="text-gray-600 dark:text-gray-400">{label}</span>
+                  <span className="font-mono font-medium text-rose-600 dark:text-rose-400">- ₹{amount.toLocaleString('en-IN')}</span>
                 </div>
               ))}
             </div>
-            <div className="bg-sky-500/10 border border-sky-500/30 rounded-lg p-4 flex justify-between">
-              <span className="text-sm font-bold text-slate-100">Net Pay</span>
-              <span className="text-lg font-bold text-sky-400">₹{(net + Math.round(employee.overtimeHours * 200)).toLocaleString('en-IN')}</span>
+
+            {/* Net Total */}
+            <div className="rounded-xl border border-brand-200 bg-brand-50/50 p-4 dark:border-brand-500/20 dark:bg-brand-500/10 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold text-brand-700 dark:text-brand-300 uppercase">Net Disbursable Salary</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Direct NEFT to registered account</p>
+              </div>
+              <p className="text-2xl font-bold font-mono text-brand-600 dark:text-brand-400">
+                ₹{(net + Math.round(employee.overtimeHours * 200)).toLocaleString('en-IN')}
+              </p>
             </div>
           </div>
         </div>
       )}
 
       {activeTab === 'AI Insights' && (
-        <div className="space-y-5">
-          {/* AI Summary */}
-          <div className="ai-card p-6">
+        <div className="space-y-6">
+          {/* AI Workforce Summary */}
+          <div className="rounded-2xl border border-brand-200 bg-brand-50/40 p-6 shadow-xs dark:border-brand-500/20 dark:bg-brand-500/[0.05]">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
-                <Sparkles className="w-4 h-4 text-white" />
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-indigo-600 text-white shadow-theme-xs">
+                <Sparkles className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-sm font-bold text-slate-100">AI Workforce Summary</p>
-                <p className="text-xs text-indigo-400">Generated by Gemini · September 2026</p>
+                <h3 className="text-base font-bold text-gray-900 dark:text-white">AI Workforce Summary & Recommendations</h3>
+                <p className="text-xs text-brand-600 dark:text-brand-400">Gemini Telemetry Synthesis · September 2026</p>
               </div>
             </div>
+
             {aiLoading ? (
-              <div className="flex items-center gap-3 text-sm text-slate-400">
-                <div className="w-4 h-4 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" />
-                Generating AI analysis...
+              <div className="flex items-center gap-3 py-6 text-sm text-gray-500 dark:text-gray-400">
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />
+                Synthesizing multi-modal telemetry and roster records...
               </div>
             ) : (
-              <div className="space-y-1">
+              <div className="space-y-2 text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
                 {aiSummary.split('\n').map((line, i) => {
                   const parts = line.split(/(\*\*.*?\*\*)/g);
                   return (
-                    <p key={i} className="text-sm text-slate-300 leading-relaxed">
+                    <p key={i}>
                       {parts.map((part, j) =>
-                        part.startsWith('**') && part.endsWith('**')
-                          ? <strong key={j} className="text-slate-100">{part.replace(/\*\*/g, '')}</strong>
-                          : part
+                        part.startsWith('**') && part.endsWith('**') ? (
+                          <strong key={j} className="font-semibold text-gray-900 dark:text-white">
+                            {part.replace(/\*\*/g, '')}
+                          </strong>
+                        ) : (
+                          part
+                        )
                       )}
                     </p>
                   );
@@ -388,27 +533,29 @@ export default function Employee360() {
             )}
           </div>
 
-          {/* Operational Events */}
-          <div className="glass-card p-5">
-            <div className="flex items-center gap-2 mb-4">
-              <Activity className="w-4 h-4 text-sky-400" />
-              <p className="section-title">Workplace Events — September 20</p>
-              <span className="text-xs text-slate-500 ml-auto">AI observed · Supervisor review required for consequential actions</span>
+          {/* Workplace Events */}
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs dark:border-gray-800 dark:bg-white/[0.03]">
+            <div className="flex items-center gap-2.5 mb-4">
+              <Activity className="w-5 h-5 text-brand-500" />
+              <h3 className="text-base font-bold text-gray-900 dark:text-white">Workplace Telemetry Events — Sep 20</h3>
+              <span className="text-xs text-gray-500 dark:text-gray-400 ml-auto hidden sm:inline">
+                AI observed · Supervisor review required
+              </span>
             </div>
-            <div className="space-y-3">
+            <div className="divide-y divide-gray-100 dark:divide-gray-800">
               {operationalEvents.map((ev, i) => (
-                <div key={i} className="flex items-center gap-4 py-2 border-b border-navy-700 text-sm">
-                  <span className="text-slate-500 w-12 text-xs">{ev.time}</span>
-                  <div className="w-2 h-2 rounded-full bg-sky-400 flex-shrink-0" />
-                  <div>
-                    <p className="text-slate-200 text-xs">{ev.zone}</p>
-                    <p className="text-slate-500 text-xs">{ev.event} · {ev.cam}</p>
+                <div key={i} className="flex items-center gap-4 py-3 text-xs sm:text-sm">
+                  <span className="font-mono text-gray-500 dark:text-gray-400 w-14">{ev.time}</span>
+                  <div className="h-2 w-2 rounded-full bg-brand-500 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-800 dark:text-gray-200">{ev.zone}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">{ev.event} · {ev.cam}</p>
                   </div>
                 </div>
               ))}
             </div>
-            <p className="text-xs text-slate-500 mt-3 italic">
-              System-observed activity based on CCTV zone events. Not used for payroll calculation.
+            <p className="mt-4 text-xs text-gray-500 dark:text-gray-400 italic">
+              Hospital compliance notice: Telemetry is advisory and not utilized for unconfirmed punitive measures.
             </p>
           </div>
         </div>

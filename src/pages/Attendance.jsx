@@ -1,29 +1,30 @@
 import { useState, useEffect, useMemo } from "react";
-import { CheckCircle, XCircle, Clock, AlertTriangle, Search, Sparkles, Calendar, UserCheck, ChevronLeft, ChevronRight, Check, X, Download, RefreshCw } from "lucide-react";
+import {
+  CheckCircle, XCircle, Clock, AlertTriangle, Search, Sparkles,
+  Calendar, UserCheck, ChevronLeft, ChevronRight, Check, X, Download, RefreshCw, Filter
+} from "lucide-react";
 import { toast } from "react-hot-toast";
 import { todayAttendance, attendanceHistory } from "../data/attendance";
 import { todayStats, departmentCoverage } from "../data/employees";
-
-const statusConfig = {
-  "Present":    { color: "#34D399", bg: "rgba(16,185,129,0.12)",  border: "rgba(16,185,129,0.25)"  },
-  "Late":       { color: "#FB923C", bg: "rgba(249,115,22,0.12)",  border: "rgba(249,115,22,0.25)"  },
-  "Absent":     { color: "#F87171", bg: "rgba(239,68,68,0.12)",   border: "rgba(239,68,68,0.25)"   },
-  "Leave":      { color: "#FBBF24", bg: "rgba(245,158,11,0.12)",  border: "rgba(245,158,11,0.25)"  },
-  "Weekly Off": { color: "#94A3B8", bg: "rgba(100,116,139,0.12)", border: "rgba(100,116,139,0.25)" },
-  "On Duty":    { color: "#38BDF8", bg: "rgba(14,165,233,0.12)",  border: "rgba(14,165,233,0.25)"  },
-  "Half Day":   { color: "#A78BFA", bg: "rgba(139,92,246,0.12)",  border: "rgba(139,92,246,0.25)"  },
-};
+import PageBreadcrumb from "../components/common/PageBreadcrumb";
+import Badge from "../components/ui/badge/Badge";
+import Button from "../components/ui/button/Button";
 
 const SHIFTS = [
-  { id: "A", name: "Morning", start: "06:00", end: "14:00", color: "#FBBF24" },
-  { id: "B", name: "Evening", start: "14:00", end: "22:00", color: "#38BDF8" },
-  { id: "C", name: "Night",   start: "22:00", end: "06:00", color: "#C084FC" },
-  { id: "G", name: "General", start: "09:00", end: "17:00", color: "#34D399" },
+  { id: "A", name: "Morning", start: "06:00", end: "14:00", color: "#f59e0b" },
+  { id: "B", name: "Evening", start: "14:00", end: "22:00", color: "#0ea5e9" },
+  { id: "C", name: "Night",   start: "22:00", end: "06:00", color: "#8b5cf6" },
+  { id: "G", name: "General", start: "09:00", end: "17:00", color: "#10b981" },
 ];
 
-const DAYS_ABBR = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
-const ROSTER_NAMES = ["Ramesh Reddy","Lakshmi Devi","Venkat Kumar","Priya Sharma","Srinivas Rao","Kavitha Nair","Rajesh Babu","Meena Yadav","Kumar Goud","Sunitha Pillai","Ravi Murthy","Padma Naidu","Nagaraju Verma","Sarala Singh","Balaiah Teja"];
-const ROSTER_DEPTS = ["ICU","Nursing","OPD","OT","Lab","Security","Reception","Housekeeping"];
+const DAYS_ABBR = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const ROSTER_NAMES = [
+  "Ramesh Reddy", "Lakshmi Devi", "Venkat Kumar", "Priya Sharma",
+  "Srinivas Rao", "Kavitha Nair", "Rajesh Babu", "Meena Yadav",
+  "Kumar Goud", "Sunitha Pillai", "Ravi Murthy", "Padma Naidu",
+  "Nagaraju Verma", "Sarala Singh", "Balaiah Teja"
+];
+const ROSTER_DEPTS = ["ICU", "Nursing", "OPD", "OT", "Lab", "Security", "Reception", "Housekeeping"];
 
 const WEEKLY_ROSTER = ROSTER_NAMES.map((name, idx) => ({
   empId: `KD-EMP-${String(idx + 1).padStart(4, "0")}`,
@@ -42,6 +43,18 @@ const CORRECTIONS = [
   { id: "COR-003", name: "Kumar Swamy",   dept: "ICU",       date: "2026-09-17", type: "Shift Correction",    original: "Marked Shift B (Evening)",    requested: "Worked Shift C (Night OT)",    reason: "Substituted for nurse on medical leave.",                  aiNote: "ICU Entry Cam 19:02 check-in matches ICU shift C roster.",     status: "Pending" },
   { id: "COR-004", name: "Padma Naidu",   dept: "Nursing",   date: "2026-09-16", type: "Absent Regularization",original: "Marked Absent",              requested: "Emergency Leave",              reason: "Family medical emergency — medical certificate submitted.", aiNote: "Certificate verified. Recommend EL deduction instead of LOP.", status: "Pending" },
 ];
+
+function getStatusBadge(status) {
+  switch (status) {
+    case "Present": return <Badge variant="light" color="success" size="sm">Present</Badge>;
+    case "Late": return <Badge variant="light" color="warning" size="sm">Late</Badge>;
+    case "Absent": return <Badge variant="light" color="error" size="sm">Absent</Badge>;
+    case "Leave": return <Badge variant="light" color="purple" size="sm">Leave</Badge>;
+    case "On Duty": return <Badge variant="light" color="info" size="sm">On Duty</Badge>;
+    case "Half Day": return <Badge variant="light" color="warning" size="sm">Half Day</Badge>;
+    default: return <Badge variant="light" color="light" size="sm">{status || "Off"}</Badge>;
+  }
+}
 
 function LiveStats() {
   const [stats, setStats] = useState(todayStats || { present: 278, absent: 18, onLeave: 12, late: 8, weeklyOff: 4, total: 312 });
@@ -74,60 +87,95 @@ function WeeklyRoster() {
   };
 
   return (
-    <div className="glass-card" style={{ overflow: "hidden" }}>
+    <div className="rounded-2xl border border-gray-200 bg-white shadow-xs overflow-hidden dark:border-gray-800 dark:bg-white/[0.03]">
       {/* Header bar */}
-      <div style={{ padding: "14px 20px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-        <button className="btn-secondary" style={{ padding: "6px 10px" }} onClick={() => setWeekOffset(w => w - 1)}><ChevronLeft style={{ width: 14, height: 14 }} /></button>
-        <span style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>
-          {weekDates[0].toLocaleDateString("en-IN", { day: "numeric", month: "short" })} – {weekDates[6].toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
-        </span>
-        <button className="btn-secondary" style={{ padding: "6px 10px" }} onClick={() => setWeekOffset(w => w + 1)}><ChevronRight style={{ width: 14, height: 14 }} /></button>
-        <button className="btn-secondary" style={{ fontSize: 11, padding: "6px 12px" }} onClick={() => setWeekOffset(0)}>Today</button>
-        <select value={deptFilter} onChange={e => setDeptFilter(e.target.value)} className="input-field" style={{ width: "auto", fontSize: 12 }}>
-          <option value="All">All Departments</option>
-          {ROSTER_DEPTS.map(d => <option key={d} value={d}>{d}</option>)}
-        </select>
-        <button className={editMode ? "btn-primary" : "btn-secondary"} style={{ fontSize: 12, marginLeft: "auto" }}
-          onClick={() => { setEditMode(e => !e); if (editMode) toast.success("Roster saved!"); }}>
-          {editMode ? <><Check style={{ width: 13, height: 13 }} /> Save</> : <><RefreshCw style={{ width: 13, height: 13 }} /> Edit</>}
-        </button>
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-5 py-4 dark:border-gray-800">
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => setWeekOffset(w => w - 1)}>
+            <ChevronLeft className="w-4 h-4" />
+          </Button>
+          <span className="text-sm font-bold text-gray-900 dark:text-white px-1">
+            {weekDates[0].toLocaleDateString("en-IN", { day: "numeric", month: "short" })} – {weekDates[6].toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+          </span>
+          <Button variant="outline" size="sm" onClick={() => setWeekOffset(w => w + 1)}>
+            <ChevronRight className="w-4 h-4" />
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => setWeekOffset(0)}>
+            Today
+          </Button>
+        </div>
+
+        <div className="flex items-center gap-2.5">
+          <select
+            value={deptFilter}
+            onChange={e => setDeptFilter(e.target.value)}
+            className="input-field text-xs py-1.5 w-auto"
+          >
+            <option value="All">All Departments</option>
+            {ROSTER_DEPTS.map(d => <option key={d} value={d}>{d}</option>)}
+          </select>
+          <Button
+            variant={editMode ? "primary" : "outline"}
+            size="sm"
+            onClick={() => {
+              setEditMode(e => !e);
+              if (editMode) toast.success("Roster assignments saved!");
+            }}
+            startIcon={editMode ? <Check className="w-4 h-4" /> : <RefreshCw className="w-4 h-4" />}
+          >
+            {editMode ? "Save Roster" : "Edit Assignments"}
+          </Button>
+        </div>
       </div>
 
       {/* Shift legend */}
-      <div style={{ padding: "8px 20px", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", gap: 12, flexWrap: "wrap" }}>
+      <div className="flex flex-wrap items-center gap-4 bg-gray-50/70 px-5 py-2.5 text-xs border-b border-gray-200 dark:bg-white/[0.01] dark:border-gray-800">
         {SHIFTS.map(s => (
-          <span key={s.id} style={{ fontSize: 11, color: s.color }}>
-            <strong>{s.id}</strong> {s.name} ({s.start}–{s.end})
+          <span key={s.id} className="flex items-center gap-1.5 font-medium text-gray-700 dark:text-gray-300">
+            <span
+              className="inline-flex h-5 w-5 items-center justify-center rounded font-mono font-bold text-[10px]"
+              style={{ backgroundColor: `${s.color}20`, color: s.color }}
+            >
+              {s.id}
+            </span>
+            {s.name} ({s.start}–{s.end})
           </span>
         ))}
-        <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>Off = Day Off</span>
+        <span className="text-gray-400 dark:text-gray-500 font-mono">Off = Scheduled Off</span>
       </div>
 
-      {/* Table */}
-      <div style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 680 }}>
+      {/* Roster Table */}
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[700px] border-collapse text-sm">
           <thead>
-            <tr style={{ background: "rgba(255,255,255,0.03)" }}>
-              <th className="table-header" style={{ textAlign: "left", width: 180 }}>Employee</th>
+            <tr className="border-b border-gray-200 bg-gray-50/50 dark:border-gray-800 dark:bg-white/[0.02]">
+              <th className="table-header w-52">Employee</th>
               {DAYS_ABBR.map((d, i) => (
-                <th key={d} className="table-header" style={{ textAlign: "center", background: weekOffset === 0 && i === todayCol ? "rgba(14,165,233,0.08)" : "transparent" }}>
-                  <div style={{ color: weekOffset === 0 && i === todayCol ? "#38BDF8" : "rgba(255,255,255,0.4)", fontSize: 11 }}>{d}</div>
-                  <div style={{ color: "rgba(255,255,255,0.25)", fontSize: 10 }}>{weekDates[i].getDate()}</div>
+                <th
+                  key={d}
+                  className={`table-header text-center ${
+                    weekOffset === 0 && i === todayCol
+                      ? "bg-brand-50/60 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400"
+                      : ""
+                  }`}
+                >
+                  <div className="font-bold">{d}</div>
+                  <div className="text-[10px] font-normal text-gray-400">{weekDates[i].getDate()}</div>
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
             {visible.map(emp => (
               <tr key={emp.empId} className="table-row">
                 <td className="table-cell">
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: "50%", background: "linear-gradient(135deg,rgba(14,165,233,0.2),rgba(99,102,241,0.2))", border: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, color: "#38BDF8", flexShrink: 0 }}>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-50 text-brand-600 font-bold text-xs dark:bg-brand-500/10 dark:text-brand-400 flex-shrink-0">
                       {emp.name.charAt(0)}
                     </div>
                     <div>
-                      <p style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.85)" }}>{emp.name}</p>
-                      <p style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>{emp.dept}</p>
+                      <p className="font-semibold text-gray-900 dark:text-white text-xs">{emp.name}</p>
+                      <p className="text-[10px] text-gray-500 dark:text-gray-400 font-mono">{emp.dept}</p>
                     </div>
                   </div>
                 </td>
@@ -135,17 +183,33 @@ function WeeklyRoster() {
                   const shift = SHIFTS.find(s => s.id === sid);
                   const isToday = weekOffset === 0 && di === todayCol;
                   return (
-                    <td key={di} className="table-cell" style={{ textAlign: "center", background: isToday ? "rgba(14,165,233,0.04)" : "transparent" }}>
+                    <td
+                      key={di}
+                      className={`table-cell text-center ${
+                        isToday ? "bg-brand-50/20 dark:bg-brand-500/[0.03]" : ""
+                      }`}
+                    >
                       {editMode ? (
-                        <select value={sid} onChange={e => changeShift(emp.empId, di, e.target.value)}
-                          style={{ fontSize: 11, fontWeight: 700, color: shift?.color || "rgba(255,255,255,0.3)", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 6, padding: "3px 4px", width: "100%" }}>
+                        <select
+                          value={sid}
+                          onChange={e => changeShift(emp.empId, di, e.target.value)}
+                          className="rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-[11px] font-bold py-1 px-1 text-center w-full"
+                          style={{ color: shift?.color }}
+                        >
                           {SHIFTS.map(s => <option key={s.id} value={s.id}>{s.id}</option>)}
                           <option value="Off">Off</option>
                         </select>
                       ) : sid === "Off" ? (
-                        <span style={{ fontSize: 11, color: "rgba(255,255,255,0.2)" }}>Off</span>
+                        <span className="text-[11px] text-gray-400 dark:text-gray-500 font-mono font-medium">Off</span>
                       ) : (
-                        <span style={{ fontSize: 11, fontWeight: 700, color: shift?.color || "#fff", background: shift ? `${shift.color}15` : "transparent", padding: "3px 8px", borderRadius: 6 }}>
+                        <span
+                          className="inline-flex items-center justify-center rounded-md px-2 py-0.5 font-mono text-xs font-bold"
+                          style={{
+                            backgroundColor: shift ? `${shift.color}15` : "transparent",
+                            color: shift?.color || "#465fff",
+                            border: `1px solid ${shift ? `${shift.color}35` : "transparent"}`
+                          }}
+                        >
                           {sid}
                         </span>
                       )}
@@ -164,43 +228,51 @@ function WeeklyRoster() {
 // ── Coverage Matrix ───────────────────────────────────────────────────────────
 function CoverageMatrix() {
   const coverage = departmentCoverage || [];
-  const HOURS = ["06","08","10","12","14","16","18","20","22","00"];
+  const HOURS = ["06", "08", "10", "12", "14", "16", "18", "20", "22", "00"];
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {coverage.map(dept => {
           const cov   = dept.coverage || 85;
-          const color = cov >= 90 ? "#34D399" : cov >= 75 ? "#FBBF24" : "#F87171";
           const total   = dept.total || dept.required || 20;
           const present = dept.present || Math.round(cov * 0.01 * total);
+          const colorClass = cov >= 90 ? "text-emerald-600 dark:text-emerald-400" : cov >= 75 ? "text-amber-600 dark:text-amber-400" : "text-rose-600 dark:text-rose-400";
+          const barBg = cov >= 90 ? "bg-emerald-500" : cov >= 75 ? "bg-amber-500" : "bg-rose-500";
+
           return (
-            <div key={dept.dept} className="glass-card-hover" style={{ padding: 20 }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+            <div key={dept.dept} className="rounded-2xl border border-gray-200 bg-white p-5 shadow-xs dark:border-gray-800 dark:bg-white/[0.03]">
+              <div className="flex items-center justify-between mb-3">
                 <div>
-                  <p style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.9)" }}>{dept.dept}</p>
-                  <p style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>{dept.category || "Clinical"}</p>
+                  <h3 className="text-sm font-bold text-gray-900 dark:text-white">{dept.dept}</h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{dept.category || "Clinical Station"}</p>
                 </div>
-                <div style={{ textAlign: "right" }}>
-                  <p style={{ fontSize: 24, fontWeight: 800, color, letterSpacing: "-0.03em" }}>{cov}%</p>
-                  <p style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>{present}/{total} staff</p>
+                <div className="text-right">
+                  <p className={`text-2xl font-bold font-mono ${colorClass}`}>{cov}%</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">{present}/{total} on floor</p>
                 </div>
               </div>
-              <div style={{ height: 8, background: "rgba(255,255,255,0.06)", borderRadius: 100, overflow: "hidden", marginBottom: 12 }}>
-                <div style={{ height: "100%", borderRadius: 100, width: `${cov}%`, transition: "width 1s ease", background: cov >= 90 ? "linear-gradient(90deg,#10B981,#34D399)" : cov >= 75 ? "linear-gradient(90deg,#F59E0B,#FBBF24)" : "linear-gradient(90deg,#EF4444,#F87171)", boxShadow: cov >= 90 ? "0 0 10px rgba(16,185,129,0.4)" : "none" }} />
+
+              {/* Progress bar */}
+              <div className="h-2 w-full rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden mb-3">
+                <div className={`h-full rounded-full ${barBg} transition-all duration-500`} style={{ width: `${cov}%` }} />
               </div>
-              <div style={{ display: "flex", gap: 8 }}>
-                {["Morning","Evening","Night"].map((sh, si) => (
-                  <div key={sh} style={{ flex: 1, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 8, padding: "8px 6px", textAlign: "center" }}>
-                    <p style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", marginBottom: 3 }}>{sh}</p>
-                    <p style={{ fontSize: 14, fontWeight: 700, color }}>{Math.round(present / 3) + (si === 0 ? 1 : 0)}</p>
+
+              <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                {["Morning", "Evening", "Night"].map((sh, si) => (
+                  <div key={sh} className="rounded-lg border border-gray-100 bg-gray-50/60 p-2 dark:border-gray-800 dark:bg-white/[0.02]">
+                    <span className="text-gray-500 dark:text-gray-400 block text-[10px]">{sh}</span>
+                    <span className="font-mono font-bold text-gray-800 dark:text-gray-200">
+                      {Math.round(present / 3) + (si === 0 ? 1 : 0)}
+                    </span>
                   </div>
                 ))}
               </div>
+
               {cov < 80 && (
-                <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 10, padding: "8px 12px", background: "rgba(239,68,68,0.07)", border: "1px solid rgba(239,68,68,0.15)", borderRadius: 8 }}>
-                  <AlertTriangle style={{ width: 12, height: 12, color: "#F87171", flexShrink: 0 }} />
-                  <p style={{ fontSize: 11, color: "#F87171" }}>Below minimum staffing threshold — action required</p>
+                <div className="mt-3 flex items-center gap-2 rounded-lg border border-rose-200 bg-rose-50/70 p-2 text-xs text-rose-700 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-400">
+                  <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                  <span>Below 80% staffing minimum — immediate floater nurse recommended</span>
                 </div>
               )}
             </div>
@@ -208,30 +280,42 @@ function CoverageMatrix() {
         })}
       </div>
 
-      {/* Hourly Heatmap */}
-      <div className="glass-card" style={{ padding: 20 }}>
-        <h3 style={{ fontSize: 15, fontWeight: 700, color: "#fff", marginBottom: 14 }}>Hourly Occupancy Heatmap</h3>
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: "3px" }}>
+      {/* Hourly Occupancy Heatmap */}
+      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs dark:border-gray-800 dark:bg-white/[0.03]">
+        <div className="mb-4">
+          <h3 className="text-base font-bold text-gray-900 dark:text-white">Hourly Occupancy & Sensor Heatmap</h3>
+          <p className="text-xs text-gray-500 dark:text-gray-400">Station sensor telemetry corroborating physical presence</p>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full border-separate border-spacing-1.5 text-xs">
             <thead>
               <tr>
-                <th style={{ width: 130, textAlign: "left", fontSize: 11, color: "rgba(255,255,255,0.3)", padding: "4px 8px" }}>Department</th>
-                {HOURS.map(h => <th key={h} style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", padding: "4px 0", textAlign: "center" }}>{h}:00</th>)}
+                <th className="w-36 text-left font-semibold text-gray-500 dark:text-gray-400 p-1">Department</th>
+                {HOURS.map(h => (
+                  <th key={h} className="text-center font-mono text-[11px] text-gray-400 dark:text-gray-500 p-1">
+                    {h}:00
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
               {coverage.slice(0, 6).map(dept => (
                 <tr key={dept.dept}>
-                  <td style={{ fontSize: 12, color: "rgba(255,255,255,0.65)", padding: "3px 8px", whiteSpace: "nowrap" }}>{dept.dept}</td>
+                  <td className="font-medium text-gray-800 dark:text-gray-200 p-1 whitespace-nowrap">{dept.dept}</td>
                   {HOURS.map((h, hi) => {
                     const base = dept.coverage || 80;
-                    const intensity = Math.min(100, base + Math.sin(hi + (dept.dept.charCodeAt(0) % 6)) * 15);
-                    const alpha = (intensity / 100) * 0.75;
-                    const bg = intensity >= 85 ? `rgba(16,185,129,${alpha})` : intensity >= 65 ? `rgba(245,158,11,${alpha})` : `rgba(239,68,68,${alpha})`;
+                    const intensity = Math.min(100, Math.max(40, base + Math.sin(hi + (dept.dept.charCodeAt(0) % 6)) * 15));
+                    const isHigh = intensity >= 85;
+                    const isMed = intensity >= 65 && intensity < 85;
+                    const cellBg = isHigh
+                      ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-400"
+                      : isMed
+                      ? "bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-400"
+                      : "bg-rose-100 text-rose-800 dark:bg-rose-500/20 dark:text-rose-400";
                     return (
-                      <td key={h} style={{ padding: "2px" }}>
-                        <div style={{ height: 28, background: bg, borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                          <span style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.8)" }}>{Math.round(intensity)}%</span>
+                      <td key={h} className="p-0.5">
+                        <div className={`h-7 rounded flex items-center justify-center font-mono text-[10px] font-bold ${cellBg}`}>
+                          {Math.round(intensity)}%
                         </div>
                       </td>
                     );
@@ -248,10 +332,10 @@ function CoverageMatrix() {
 
 // ── Attendance History ────────────────────────────────────────────────────────
 function AttendanceHistory() {
-  const [search, setSearch]       = useState("");
-  const [deptFilter, setDeptFilter] = useState("All");
+  const [search, setSearch]           = useState("");
+  const [deptFilter, setDeptFilter]   = useState("All");
   const [monthFilter, setMonthFilter] = useState("2026-09");
-  const [page, setPage]           = useState(0);
+  const [page, setPage]               = useState(0);
   const PER_PAGE = 20;
 
   const depts = useMemo(() => ["All", ...new Set(attendanceHistory.map(r => r.department))], []);
@@ -270,73 +354,97 @@ function AttendanceHistory() {
   const pageData   = filtered.slice(page * PER_PAGE, (page + 1) * PER_PAGE);
 
   return (
-    <div className="glass-card" style={{ overflow: "hidden" }}>
-      <div style={{ padding: "14px 20px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
-        <div style={{ position: "relative", flex: 1, minWidth: 200 }}>
-          <Search style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", width: 14, height: 14, color: "rgba(255,255,255,0.3)" }} />
-          <input type="text" placeholder="Search name or Emp ID..." value={search} onChange={e => { setSearch(e.target.value); setPage(0); }} className="input-field" style={{ paddingLeft: 36, fontSize: 12 }} />
+    <div className="rounded-2xl border border-gray-200 bg-white shadow-xs overflow-hidden dark:border-gray-800 dark:bg-white/[0.03]">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 p-4 dark:border-gray-800">
+        <div className="relative flex-1 min-w-[220px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search employee name or ID..."
+            value={search}
+            onChange={e => { setSearch(e.target.value); setPage(0); }}
+            className="input-field pl-9 text-xs"
+          />
         </div>
-        <input type="month" value={monthFilter} onChange={e => { setMonthFilter(e.target.value); setPage(0); }} className="input-field" style={{ width: "auto", fontSize: 12 }} />
-        <select value={deptFilter} onChange={e => { setDeptFilter(e.target.value); setPage(0); }} className="input-field" style={{ width: "auto", fontSize: 12 }}>
+        <input
+          type="month"
+          value={monthFilter}
+          onChange={e => { setMonthFilter(e.target.value); setPage(0); }}
+          className="input-field text-xs w-auto"
+        />
+        <select
+          value={deptFilter}
+          onChange={e => { setDeptFilter(e.target.value); setPage(0); }}
+          className="input-field text-xs w-auto"
+        >
           {depts.map(d => <option key={d} value={d}>{d === "All" ? "All Departments" : d}</option>)}
         </select>
-        <span style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginLeft: "auto" }}>{filtered.length} records</span>
+        <span className="text-xs font-mono text-gray-500 dark:text-gray-400 ml-auto">
+          {filtered.length} total entries
+        </span>
       </div>
-      <div style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse text-sm">
           <thead>
-            <tr style={{ background: "rgba(255,255,255,0.03)" }}>
-              {["Date","Employee","Department","Shift","Check In","Check Out","Status","Overtime"].map(h => (
-                <th key={h} className="table-header" style={{ textAlign: "left" }}>{h}</th>
+            <tr className="border-b border-gray-200 bg-gray-50/50 dark:border-gray-800 dark:bg-white/[0.02]">
+              {["Date", "Employee", "Department", "Shift", "Check In", "Check Out", "Status", "Overtime"].map(h => (
+                <th key={h} className="table-header">{h}</th>
               ))}
             </tr>
           </thead>
-          <tbody>
-            {pageData.map((rec, i) => {
-              const sc = statusConfig[rec.status] || statusConfig["Absent"];
-              return (
-                <tr key={rec.id || i} className="table-row">
-                  <td className="table-cell"><span style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", fontFamily: "monospace" }}>{rec.date}</span></td>
-                  <td className="table-cell">
-                    <p style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.9)" }}>{rec.employeeName}</p>
-                    <p style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", fontFamily: "monospace" }}>{rec.employeeId}</p>
-                  </td>
-                  <td className="table-cell"><span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>{rec.department}</span></td>
-                  <td className="table-cell"><span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>{rec.shift || "General"}</span></td>
-                  <td className="table-cell"><span style={{ fontFamily: "monospace", fontSize: 12, color: rec.checkIn ? "#34D399" : "rgba(255,255,255,0.2)" }}>{rec.checkIn || "—"}</span></td>
-                  <td className="table-cell"><span style={{ fontFamily: "monospace", fontSize: 12, color: rec.checkOut ? "#38BDF8" : "rgba(255,255,255,0.2)" }}>{rec.checkOut || "—"}</span></td>
-                  <td className="table-cell">
-                    <span style={{ background: sc.bg, border: `1px solid ${sc.border}`, color: sc.color, fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 100 }}>{rec.status}</span>
-                  </td>
-                  <td className="table-cell">
-                    <span style={{ fontSize: 12, color: rec.overtime > 0 ? "#FBBF24" : "rgba(255,255,255,0.2)" }}>{rec.overtime > 0 ? `${rec.overtime}m` : "—"}</span>
-                  </td>
-                </tr>
-              );
-            })}
+          <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+            {pageData.map((rec, i) => (
+              <tr key={rec.id || i} className="table-row">
+                <td className="table-cell font-mono text-xs text-gray-500 dark:text-gray-400">{rec.date}</td>
+                <td className="table-cell">
+                  <p className="font-semibold text-gray-900 dark:text-white text-xs">{rec.employeeName}</p>
+                  <p className="text-[10px] text-gray-500 dark:text-gray-400 font-mono">{rec.employeeId}</p>
+                </td>
+                <td className="table-cell text-xs text-gray-600 dark:text-gray-400">{rec.department}</td>
+                <td className="table-cell text-xs text-gray-500 dark:text-gray-400 font-mono">{rec.shift || "General"}</td>
+                <td className="table-cell font-mono text-xs text-emerald-600 dark:text-emerald-400">{rec.checkIn || "—"}</td>
+                <td className="table-cell font-mono text-xs text-brand-600 dark:text-brand-400">{rec.checkOut || "—"}</td>
+                <td className="table-cell">{getStatusBadge(rec.status)}</td>
+                <td className="table-cell font-mono text-xs">
+                  {rec.overtime > 0 ? (
+                    <span className="text-amber-600 dark:text-amber-400 font-bold">+{rec.overtime}m</span>
+                  ) : (
+                    <span className="text-gray-400">—</span>
+                  )}
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
+
       {totalPages > 1 && (
-        <div style={{ padding: "12px 20px", borderTop: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", gap: 8, justifyContent: "center" }}>
-          <button className="btn-secondary" style={{ padding: "6px 10px" }} onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0}><ChevronLeft style={{ width: 14, height: 14 }} /></button>
-          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>Page {page + 1} / {totalPages}</span>
-          <button className="btn-secondary" style={{ padding: "6px 10px" }} onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page === totalPages - 1}><ChevronRight style={{ width: 14, height: 14 }} /></button>
+        <div className="flex items-center justify-between border-t border-gray-200 p-4 dark:border-gray-800">
+          <Button variant="outline" size="sm" onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0}>
+            <ChevronLeft className="w-4 h-4" /> Previous
+          </Button>
+          <span className="text-xs text-gray-500 dark:text-gray-400 font-mono">
+            Page {page + 1} of {totalPages}
+          </span>
+          <Button variant="outline" size="sm" onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page === totalPages - 1}>
+            Next <ChevronRight className="w-4 h-4" />
+          </Button>
         </div>
       )}
     </div>
   );
 }
 
-// ── Main Component ────────────────────────────────────────────────────────────
+// ── Main Attendance Component ─────────────────────────────────────────────────
 export default function Attendance() {
-  const [activeTab, setActiveTab]   = useState("today");
-  const [search, setSearch]         = useState("");
+  const [activeTab, setActiveTab]       = useState("today");
+  const [search, setSearch]             = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
-  const [deptFilter, setDeptFilter] = useState("All");
-  const [corrections, setCorrections] = useState(CORRECTIONS);
-  const [attendanceData]            = useState(todayAttendance || []);
-  const stats                       = LiveStats();
+  const [deptFilter, setDeptFilter]     = useState("All");
+  const [corrections, setCorrections]   = useState(CORRECTIONS);
+  const [attendanceData]                = useState(todayAttendance || []);
+  const stats                           = LiveStats();
 
   const depts = useMemo(() => ["All", ...new Set((todayAttendance || []).map(e => e.department).filter(Boolean))], []);
 
@@ -360,12 +468,12 @@ export default function Attendance() {
   const presentPct = Math.round((presentVal / totalVal) * 100);
 
   const statItems = [
-    { label: "Present",    value: presentVal,          color: "#34D399" },
-    { label: "Absent",     value: stats.absent  || 18, color: "#F87171" },
-    { label: "On Leave",   value: stats.onLeave || 12, color: "#FBBF24" },
-    { label: "Late",       value: stats.late    || 8,  color: "#FB923C" },
-    { label: "Weekly Off", value: stats.weeklyOff|| 4, color: "#94A3B8" },
-    { label: "Coverage",   value: `${presentPct}%`,    color: presentPct >= 90 ? "#34D399" : presentPct >= 75 ? "#FBBF24" : "#F87171" },
+    { label: "Present Today", value: presentVal, color: "text-emerald-600 dark:text-emerald-400" },
+    { label: "Absent",        value: stats.absent || 18, color: "text-rose-600 dark:text-rose-400" },
+    { label: "On Leave",      value: stats.onLeave || 12, color: "text-amber-600 dark:text-amber-400" },
+    { label: "Late Punches",  value: stats.late || 8, color: "text-orange-600 dark:text-orange-400" },
+    { label: "Weekly Off",    value: stats.weeklyOff || 4, color: "text-gray-600 dark:text-gray-400" },
+    { label: "Floor Coverage",value: `${presentPct}%`, color: "text-brand-600 dark:text-brand-400" },
   ];
 
   const TABS = [
@@ -378,34 +486,47 @@ export default function Attendance() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
-        <div>
-          <h1 style={{ fontSize: 26, fontWeight: 900, color: "#fff", letterSpacing: "-0.04em" }}>Attendance Management</h1>
-          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginTop: 4 }}>Real-time muster · Weekly roster · Coverage matrix · History</p>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.2)", borderRadius: 100, padding: "6px 14px" }}>
-            <div className="live-dot" /><span style={{ fontSize: 12, color: "#34D399", fontWeight: 600 }}>Live</span>
+      {/* Top Header */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <PageBreadcrumb
+          pageTitle="Attendance & Workforce Roster"
+          breadcrumbs={[
+            { label: 'Workforce', path: '/employees' },
+            { label: 'Attendance' }
+          ]}
+        />
+        <div className="flex items-center gap-2.5">
+          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-400">
+            <span className="live-dot" /> Live Biometric Stream
           </div>
-          <button className="btn-secondary" style={{ fontSize: 12 }}><Download style={{ width: 14, height: 14 }} /> Export</button>
+          <Button variant="outline" size="sm" startIcon={<Download className="w-4 h-4" />}>
+            Export Muster
+          </Button>
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      {/* Stats Grid */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         {statItems.map(item => (
-          <div key={item.label} className="glass-card" style={{ padding: "16px 12px", textAlign: "center" }}>
-            <p style={{ fontSize: 28, fontWeight: 800, color: item.color, letterSpacing: "-0.04em" }}>{item.value}</p>
-            <p style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 4 }}>{item.label}</p>
+          <div key={item.label} className="rounded-2xl border border-gray-200 bg-white p-4 text-center shadow-xs dark:border-gray-800 dark:bg-white/[0.03]">
+            <p className={`text-2xl font-bold font-mono sm:text-3xl ${item.color}`}>{item.value}</p>
+            <p className="mt-1 text-xs font-medium text-gray-500 dark:text-gray-400">{item.label}</p>
           </div>
         ))}
       </div>
 
       {/* Tabs */}
-      <div className="tab-bar" style={{ flexWrap: "wrap" }}>
+      <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-gray-200 bg-gray-100 p-1.5 dark:border-gray-800 dark:bg-gray-900/60 w-fit">
         {TABS.map(tab => (
-          <button key={tab.id} className={activeTab === tab.id ? "tab-active" : "tab-item"} onClick={() => setActiveTab(tab.id)}>
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`rounded-lg px-4 py-2 text-xs sm:text-sm font-semibold transition-all ${
+              activeTab === tab.id
+                ? "bg-white text-brand-600 shadow-xs dark:bg-brand-500 dark:text-white"
+                : "text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+            }`}
+          >
             {tab.label}
           </button>
         ))}
@@ -413,59 +534,84 @@ export default function Attendance() {
 
       {/* TODAY'S MUSTER */}
       {activeTab === "today" && (
-        <div className="glass-card" style={{ overflow: "hidden" }}>
-          <div style={{ padding: "14px 20px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
-            <div style={{ position: "relative", flex: 1, minWidth: 200 }}>
-              <Search style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", width: 14, height: 14, color: "rgba(255,255,255,0.3)" }} />
-              <input type="text" placeholder="Search name or ID..." value={search} onChange={e => setSearch(e.target.value)} className="input-field" style={{ paddingLeft: 36, fontSize: 12 }} />
+        <div className="rounded-2xl border border-gray-200 bg-white shadow-xs overflow-hidden dark:border-gray-800 dark:bg-white/[0.03]">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 p-4 dark:border-gray-800">
+            <div className="relative flex-1 min-w-[220px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search employee name or ID..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="input-field pl-9 text-xs"
+              />
             </div>
-            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="input-field" style={{ width: "auto", fontSize: 12 }}>
+            <select
+              value={statusFilter}
+              onChange={e => setStatusFilter(e.target.value)}
+              className="input-field text-xs w-auto"
+            >
               <option value="All">All Statuses</option>
-              {Object.keys(statusConfig).map(s => <option key={s} value={s}>{s}</option>)}
+              {["Present", "Late", "Absent", "Leave", "On Duty", "Half Day"].map(s => (
+                <option key={s} value={s}>{s}</option>
+              ))}
             </select>
-            <select value={deptFilter} onChange={e => setDeptFilter(e.target.value)} className="input-field" style={{ width: "auto", fontSize: 12 }}>
+            <select
+              value={deptFilter}
+              onChange={e => setDeptFilter(e.target.value)}
+              className="input-field text-xs w-auto"
+            >
               {depts.map(d => <option key={d} value={d}>{d === "All" ? "All Departments" : d}</option>)}
             </select>
-            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginLeft: "auto" }}>{filtered.length}/{attendanceData.length}</span>
+            <span className="text-xs font-mono text-gray-500 dark:text-gray-400 ml-auto">
+              Showing {filtered.length} of {attendanceData.length}
+            </span>
           </div>
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-sm">
               <thead>
-                <tr style={{ background: "rgba(255,255,255,0.03)" }}>
-                  {["Employee","Department","Shift","Check In","Check Out","Status","AI Note"].map(h => (
-                    <th key={h} className="table-header" style={{ textAlign: "left" }}>{h}</th>
+                <tr className="border-b border-gray-200 bg-gray-50/50 dark:border-gray-800 dark:bg-white/[0.02]">
+                  {["Employee", "Department", "Shift", "Check In", "Check Out", "Status", "AI Sensor Note"].map(h => (
+                    <th key={h} className="table-header">{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody>
-                {filtered.slice(0, 30).map((emp, i) => {
-                  const sc = statusConfig[emp.status] || statusConfig["Absent"];
-                  return (
-                    <tr key={emp.employeeId || i} className="table-row">
-                      <td className="table-cell">
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg,rgba(14,165,233,0.2),rgba(99,102,241,0.2))", border: "1px solid rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#38BDF8", flexShrink: 0 }}>
-                            {(emp.employeeName || emp.name || "U").charAt(0)}
-                          </div>
-                          <div>
-                            <p style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.9)" }}>{emp.employeeName || emp.name}</p>
-                            <p style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", fontFamily: "monospace" }}>{emp.employeeId || emp.id}</p>
-                          </div>
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                {filtered.slice(0, 30).map((emp, i) => (
+                  <tr key={emp.employeeId || i} className="table-row">
+                    <td className="table-cell">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-50 text-brand-600 font-bold text-xs dark:bg-brand-500/10 dark:text-brand-400 flex-shrink-0">
+                          {(emp.employeeName || emp.name || "U").charAt(0)}
                         </div>
-                      </td>
-                      <td className="table-cell"><span style={{ fontSize: 12, color: "rgba(255,255,255,0.55)" }}>{emp.department}</span></td>
-                      <td className="table-cell"><span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>{emp.shift || "General"}</span></td>
-                      <td className="table-cell"><span style={{ fontFamily: "monospace", fontSize: 12, color: emp.checkIn ? "#34D399" : "rgba(255,255,255,0.2)" }}>{emp.checkIn || "—"}</span></td>
-                      <td className="table-cell"><span style={{ fontFamily: "monospace", fontSize: 12, color: emp.checkOut ? "#38BDF8" : "rgba(255,255,255,0.2)" }}>{emp.checkOut || "—"}</span></td>
-                      <td className="table-cell">
-                        <span style={{ background: sc.bg, border: `1px solid ${sc.border}`, color: sc.color, fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 100 }}>{emp.status}</span>
-                      </td>
-                      <td className="table-cell">
-                        {emp.aiNote && <div style={{ display: "flex", alignItems: "center", gap: 4 }}><Sparkles style={{ width: 10, height: 10, color: "#818CF8" }} /><span style={{ fontSize: 10, color: "rgba(255,255,255,0.4)" }}>{emp.aiNote}</span></div>}
-                      </td>
-                    </tr>
-                  );
-                })}
+                        <div>
+                          <p className="font-semibold text-gray-900 dark:text-white text-xs">
+                            {emp.employeeName || emp.name}
+                          </p>
+                          <p className="text-[10px] text-gray-500 dark:text-gray-400 font-mono">
+                            {emp.employeeId || emp.id}
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="table-cell text-xs text-gray-600 dark:text-gray-400">{emp.department}</td>
+                    <td className="table-cell text-xs text-gray-500 dark:text-gray-400 font-mono">{emp.shift || "General"}</td>
+                    <td className="table-cell font-mono text-xs text-emerald-600 dark:text-emerald-400 font-semibold">{emp.checkIn || "—"}</td>
+                    <td className="table-cell font-mono text-xs text-brand-600 dark:text-brand-400 font-semibold">{emp.checkOut || "—"}</td>
+                    <td className="table-cell">{getStatusBadge(emp.status)}</td>
+                    <td className="table-cell">
+                      {emp.aiNote ? (
+                        <div className="flex items-center gap-1.5 text-xs text-brand-700 dark:text-brand-300">
+                          <Sparkles className="w-3.5 h-3.5 flex-shrink-0 text-brand-500" />
+                          <span className="truncate max-w-[260px]">{emp.aiNote}</span>
+                        </div>
+                      ) : (
+                        <span className="text-gray-400 text-xs">—</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
@@ -480,42 +626,65 @@ export default function Attendance() {
       {activeTab === "corrections" && (
         <div className="space-y-4">
           {corrections.map(corr => (
-            <div key={corr.id} className="glass-card" style={{ padding: 20 }}>
-              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10, flexWrap: "wrap" }}>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: "#38BDF8", fontFamily: "monospace", background: "rgba(14,165,233,0.1)", border: "1px solid rgba(14,165,233,0.2)", borderRadius: 6, padding: "2px 8px" }}>{corr.id}</span>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>{corr.name}</span>
-                    <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>· {corr.dept}</span>
-                    <span style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", fontFamily: "monospace" }}>{corr.date}</span>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: "#FBBF24", background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)", borderRadius: 6, padding: "2px 8px" }}>{corr.type}</span>
+            <div key={corr.id} className="rounded-2xl border border-gray-200 bg-white p-5 shadow-xs dark:border-gray-800 dark:bg-white/[0.03]">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div className="flex-1 space-y-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant="light" color="primary" size="sm">
+                      <span className="font-mono">{corr.id}</span>
+                    </Badge>
+                    <span className="text-sm font-bold text-gray-900 dark:text-white">{corr.name}</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">· {corr.dept}</span>
+                    <span className="text-xs text-gray-400 font-mono">· {corr.date}</span>
+                    <Badge variant="light" color="warning" size="sm">{corr.type}</Badge>
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
-                    <div style={{ background: "rgba(239,68,68,0.07)", border: "1px solid rgba(239,68,68,0.15)", borderRadius: 10, padding: "10px 14px" }}>
-                      <p style={{ fontSize: 10, color: "#F87171", fontWeight: 700, marginBottom: 4, textTransform: "uppercase" }}>Original Record</p>
-                      <p style={{ fontSize: 12, color: "rgba(255,255,255,0.65)" }}>{corr.original}</p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="rounded-xl border border-rose-200 bg-rose-50/50 p-3 text-xs dark:border-rose-500/20 dark:bg-rose-500/10">
+                      <p className="font-bold text-rose-700 dark:text-rose-400 uppercase tracking-wider text-[10px] mb-1">Original Biometric Entry</p>
+                      <p className="font-mono text-gray-800 dark:text-gray-200">{corr.original}</p>
                     </div>
-                    <div style={{ background: "rgba(16,185,129,0.07)", border: "1px solid rgba(16,185,129,0.15)", borderRadius: 10, padding: "10px 14px" }}>
-                      <p style={{ fontSize: 10, color: "#34D399", fontWeight: 700, marginBottom: 4, textTransform: "uppercase" }}>Requested Correction</p>
-                      <p style={{ fontSize: 12, color: "rgba(255,255,255,0.65)" }}>{corr.requested}</p>
+                    <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-3 text-xs dark:border-emerald-500/20 dark:bg-emerald-500/10">
+                      <p className="font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider text-[10px] mb-1">Requested Regularization</p>
+                      <p className="font-mono text-gray-800 dark:text-gray-200">{corr.requested}</p>
                     </div>
                   </div>
-                  <p style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 8 }}><span style={{ color: "rgba(255,255,255,0.3)" }}>Reason: </span>{corr.reason}</p>
-                  <div style={{ display: "flex", alignItems: "flex-start", gap: 8, background: "rgba(99,102,241,0.07)", border: "1px solid rgba(99,102,241,0.15)", borderRadius: 10, padding: "10px 14px" }}>
-                    <Sparkles style={{ width: 12, height: 12, color: "#818CF8", flexShrink: 0, marginTop: 1 }} />
-                    <p style={{ fontSize: 11, color: "#818CF8" }}>{corr.aiNote}</p>
+
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
+                    <strong className="text-gray-700 dark:text-gray-300">Staff Note: </strong>
+                    {corr.reason}
+                  </p>
+
+                  <div className="flex items-start gap-2 rounded-xl border border-brand-200 bg-brand-50/50 p-3 text-xs text-brand-800 dark:border-brand-500/20 dark:bg-brand-500/10 dark:text-brand-300">
+                    <Sparkles className="w-4 h-4 flex-shrink-0 text-brand-500 mt-0.5" />
+                    <p>{corr.aiNote}</p>
                   </div>
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 8, flexShrink: 0 }}>
+
+                <div className="flex items-center gap-2 flex-shrink-0">
                   {corr.status === "Pending" ? (
                     <>
-                      <button className="btn-success" style={{ fontSize: 12, padding: "8px 16px" }} onClick={() => handleCorrection(corr.id, "approve")}><Check style={{ width: 13, height: 13 }} /> Approve</button>
-                      <button className="btn-danger"  style={{ fontSize: 12, padding: "8px 16px" }} onClick={() => handleCorrection(corr.id, "reject")}><X style={{ width: 13, height: 13 }} /> Reject</button>
+                      <Button
+                        variant="success"
+                        size="sm"
+                        startIcon={<Check className="w-4 h-4" />}
+                        onClick={() => handleCorrection(corr.id, "approve")}
+                      >
+                        Approve
+                      </Button>
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        startIcon={<X className="w-4 h-4" />}
+                        onClick={() => handleCorrection(corr.id, "reject")}
+                      >
+                        Reject
+                      </Button>
                     </>
                   ) : (
-                    <span style={{ fontSize: 12, fontWeight: 700, padding: "6px 14px", borderRadius: 100, color: corr.status === "Approved" ? "#34D399" : "#F87171", background: corr.status === "Approved" ? "rgba(16,185,129,0.12)" : "rgba(239,68,68,0.12)", border: `1px solid ${corr.status === "Approved" ? "rgba(16,185,129,0.25)" : "rgba(239,68,68,0.25)"}` }}>
+                    <Badge variant="light" color={corr.status === "Approved" ? "success" : "error"} size="md">
                       {corr.status}
-                    </span>
+                    </Badge>
                   )}
                 </div>
               </div>

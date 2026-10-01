@@ -10,10 +10,10 @@ const REPORTS = [
   { id: "monthly-attendance", title: "Monthly Attendance Report",    desc: "Full muster roll with present/absent/late/leave breakdown per department", icon: Users,    color: "#38BDF8", category: "Attendance", formats: ["PDF", "XLSX", "CSV"] },
   { id: "shift-roster",       title: "Shift Roster Export",          desc: "Weekly/monthly shift assignments for all staff across all departments",    icon: Clock,    color: "#FBBF24", category: "Shifts",     formats: ["PDF", "XLSX"] },
   { id: "payroll-summary",    title: "Payroll Summary Report",       desc: "Gross, deductions, net pay per employee with statutory compliance summary",icon: Wallet,   color: "#34D399", category: "Payroll",    formats: ["PDF", "XLSX"] },
-  { id: "leave-analysis",     title: "Leave Analysis Report",        desc: "Leave pattern analysis — type-wise, department-wise, seasonal trends",    icon: Calendar, color: "#C084FC", category: "Leave",      formats: ["PDF", "XLSX", "CSV"] },
+  { id: "leave-analysis",     title: "Leave Analysis Report",        desc: "Leave pattern analysis â€” type-wise, department-wise, seasonal trends",    icon: Calendar, color: "#C084FC", category: "Leave",      formats: ["PDF", "XLSX", "CSV"] },
   { id: "department-coverage",title: "Department Coverage Report",   desc: "AI-driven staffing adequacy analysis per department with recommendations",icon: BarChart3, color: "#FB923C", category: "Analytics", formats: ["PDF", "XLSX"] },
   { id: "cctv-incidents",     title: "CCTV Incident Log",            desc: "All AI-detected incidents, alerts resolved/pending with timestamps",      icon: Activity, color: "#F87171", category: "Security",   formats: ["PDF", "CSV"] },
-  { id: "nabh-compliance",    title: "NABH Compliance Report",       desc: "Audit-ready compliance summary — staffing ratios, training, policy",     icon: Shield,   color: "#818CF8", category: "Compliance", formats: ["PDF"] },
+  { id: "nabh-compliance",    title: "NABH Compliance Report",       desc: "Audit-ready compliance summary â€” staffing ratios, training, policy",     icon: Shield,   color: "#818CF8", category: "Compliance", formats: ["PDF"] },
   { id: "ai-insights",        title: "AI Insights Summary",          desc: "Aggregated K-DuraCare AI recommendations, anomalies, and action items",  icon: Sparkles, color: "#06B6D4", category: "AI",         formats: ["PDF", "XLSX"] },
   { id: "hr-analytics",       title: "HR Analytics Report",          desc: "Attrition analysis, hiring trends, performance correlations",            icon: Users,    color: "#10B981", category: "HR",          formats: ["PDF", "XLSX", "CSV"] },
 ];
@@ -42,7 +42,7 @@ function generateReportContent(reportId, fmt) {
   const toPDFText = (title, sections) => {
     const header = [
       "================================================================",
-      `  K-DURACARE · Kanakadurga Nursing Home`,
+      `  K-DURACARE Â· Kanakadurga Nursing Home`,
       `  ${title}`,
       `  Generated: ${nowFull}`,
       "================================================================",
@@ -261,7 +261,7 @@ export default function Reports() {
   const handleDownload = (title, fmt) => {
     const record = { title, fmt, time: new Date().toLocaleTimeString() };
     setDownloads(prev => [record, ...prev].slice(0, 5));
-    toast.success(`${title} — ${fmt} downloaded!`, { icon: "??" });
+    toast.success(`${title} â€” ${fmt} downloaded!`, { icon: "??" });
   };
 
   return (
@@ -270,7 +270,7 @@ export default function Reports() {
         <div>
           <h1 style={{ fontSize: 26, fontWeight: 900, color: "#fff", letterSpacing: "-0.04em" }}>Reports</h1>
           <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginTop: 4 }}>
-            {REPORTS.length} report templates · Real data export (PDF, XLSX, CSV)
+            {REPORTS.length} report templates Â· Real data export (PDF, XLSX, CSV)
           </p>
         </div>
       </div>

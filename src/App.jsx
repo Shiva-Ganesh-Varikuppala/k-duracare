@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import AppLayout from './layouts/AppLayout';
 import Login from './pages/Login';
@@ -31,18 +32,19 @@ function ProtectedRoute({ module, children }) {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            style: { background: '#1E2A45', color: '#E2E8F0', border: '1px solid #253355' },
-          }}
-        />
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/" element={<AppLayout />}>
-            <Route index element={<Navigate to="/dashboard" replace />} />
+    <ThemeProvider>
+      <BrowserRouter>
+        <AuthProvider>
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              className: 'dark:bg-gray-800 dark:text-white dark:border-gray-700 bg-white text-gray-800 border-gray-200 border shadow-theme-md text-xs font-medium',
+            }}
+          />
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/" element={<AppLayout />}>
+              <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
 
             {/* Workforce */}
@@ -107,5 +109,6 @@ export default function App() {
         </Routes>
       </AuthProvider>
     </BrowserRouter>
-  );
+  </ThemeProvider>
+);
 }

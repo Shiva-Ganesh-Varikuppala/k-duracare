@@ -1,36 +1,39 @@
-﻿import { useState, useMemo } from "react";
-import { Calendar, Clock, Check, X, Sparkles, AlertTriangle, User, Plus, ChevronLeft, ChevronRight, FileText, BarChart3, ShieldCheck } from "lucide-react";
+import { useState, useMemo } from "react";
+import {
+  Calendar, Clock, Check, X, Sparkles, AlertTriangle, User,
+  Plus, ChevronLeft, ChevronRight, FileText, BarChart3, Filter
+} from "lucide-react";
 import { toast } from "react-hot-toast";
 import { leaveRequests, leaveBalances, leaveCalendarData } from "../data/leaves";
 import { employees } from "../data/employees";
 import { useAuth } from "../context/AuthContext";
+import PageBreadcrumb from "../components/common/PageBreadcrumb";
+import Badge from "../components/ui/badge/Badge";
+import Button from "../components/ui/button/Button";
 
-const LEAVE_TYPES = ["Casual Leave", "Sick Leave", "Earned Leave", "Maternity Leave", "Paternity Leave", "Emergency Leave", "Compensatory Leave"];
-
-const STATUS_CFG = {
-  "Pending":  { color: "#FBBF24", bg: "rgba(245,158,11,0.12)",  border: "rgba(245,158,11,0.25)"  },
-  "Approved": { color: "#34D399", bg: "rgba(16,185,129,0.12)", border: "rgba(16,185,129,0.25)" },
-  "Rejected": { color: "#F87171", bg: "rgba(239,68,68,0.12)",  border: "rgba(239,68,68,0.25)"  },
-};
+const LEAVE_TYPES = [
+  "Casual Leave", "Sick Leave", "Earned Leave", "Maternity Leave",
+  "Paternity Leave", "Emergency Leave", "Compensatory Leave"
+];
 
 const LEAVE_COLORS = {
-  "Casual Leave":      "#38BDF8",
-  "Sick Leave":        "#F87171",
-  "Earned Leave":      "#34D399",
-  "Maternity Leave":   "#C084FC",
-  "Paternity Leave":   "#818CF8",
-  "Emergency Leave":   "#FB923C",
-  "Compensatory Leave":"#FBBF24",
+  "Casual Leave":       "primary",
+  "Sick Leave":         "error",
+  "Earned Leave":       "success",
+  "Maternity Leave":    "purple",
+  "Paternity Leave":    "info",
+  "Emergency Leave":    "warning",
+  "Compensatory Leave": "warning",
 };
 
 const AI_IMPACTS = {
-  "KD-EMP-0001": { level: "High",   msg: "Only 2 senior doctors scheduled. Replacement required.",          color: "#F87171" },
-  "KD-EMP-0002": { level: "Medium", msg: "Night shift coverage may drop below 80%. Roster adjustment advised.", color: "#FBBF24" },
-  "KD-EMP-0005": { level: "Low",    msg: "Sufficient backup available. Auto-suggest: Schedule shift swap.",  color: "#34D399" },
+  "KD-EMP-0001": { level: "High",   msg: "Only 2 senior doctors scheduled. Replacement required.",          color: "error" },
+  "KD-EMP-0002": { level: "Medium", msg: "Night shift coverage may drop below 80%. Roster adjustment advised.", color: "warning" },
+  "KD-EMP-0005": { level: "Low",    msg: "Sufficient backup available. Auto-suggest: Schedule shift swap.",  color: "success" },
 };
 
-const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-const DAYS   = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const DAYS   = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 // ─── Apply Leave Modal ────────────────────────────────────────────────────────
 function ApplyLeaveModal({ onClose, onSubmit, currentUser }) {
@@ -49,13 +52,15 @@ function ApplyLeaveModal({ onClose, onSubmit, currentUser }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.empId || !form.from || !form.to || !form.reason.trim()) {
-      toast.error("Please fill all required fields"); return;
+      toast.error("Please fill all required fields");
+      return;
     }
     if (new Date(form.to) < new Date(form.from)) {
-      toast.error("To date must be after From date"); return;
+      toast.error("To date must be after From date");
+      return;
     }
     setLoading(true);
-    await new Promise(r => setTimeout(r, 900));
+    await new Promise(r => setTimeout(r, 800));
     onSubmit(form);
     toast.success("Leave application submitted successfully!");
     setLoading(false);
@@ -64,66 +69,105 @@ function ApplyLeaveModal({ onClose, onSubmit, currentUser }) {
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-glass" style={{ width: "100%", maxWidth: 540 }} onClick={e => e.stopPropagation()}>
-        <div style={{ padding: "22px 28px", borderBottom: "1px solid rgba(255,255,255,0.07)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div className="modal-glass max-w-lg" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-gray-800">
           <div>
-            <h3 style={{ fontSize: 18, fontWeight: 800, color: "#fff", letterSpacing: "-0.03em" }}>Apply for Leave</h3>
-            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 3 }}>AI impact analysis on submission</p>
+            <h3 className="text-base font-bold text-gray-900 dark:text-white">Apply for Leave</h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Real-time staffing impact verification enabled</p>
           </div>
-          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.4)", padding: 4 }}><X style={{ width: 18, height: 18 }} /></button>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+            <X className="w-5 h-5" />
+          </button>
         </div>
-        <form onSubmit={handleSubmit} style={{ padding: "22px 28px" }}>
-          <div className="space-y-4">
+
+        <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+          <div>
+            <label className="input-label">Select Employee</label>
+            <select
+              value={form.empId}
+              onChange={e => setForm(p => ({ ...p, empId: e.target.value }))}
+              className="input-field text-sm"
+              required
+            >
+              <option value="">Choose employee...</option>
+              {employees.slice(0, 20).map(emp => (
+                <option key={emp.empId || emp.id} value={emp.empId || emp.id}>
+                  {emp.name} — {emp.department} ({emp.empId || emp.id})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="input-label">Leave Category</label>
+            <select
+              value={form.type}
+              onChange={e => setForm(p => ({ ...p, type: e.target.value }))}
+              className="input-field text-sm"
+            >
+              {LEAVE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="input-label">Employee</label>
-              <select value={form.empId} onChange={e => setForm(p => ({ ...p, empId: e.target.value }))} className="input-field" required>
-                <option value="">Select Employee</option>
-                {employees.slice(0, 20).map(emp => (
-                  <option key={emp.empId || emp.id} value={emp.empId || emp.id}>{emp.name} — {emp.department}</option>
-                ))}
-              </select>
+              <label className="input-label">Start Date</label>
+              <input
+                type="date"
+                value={form.from}
+                onChange={e => setForm(p => ({ ...p, from: e.target.value }))}
+                className="input-field font-mono text-sm"
+                required
+              />
             </div>
             <div>
-              <label className="input-label">Leave Type</label>
-              <select value={form.type} onChange={e => setForm(p => ({ ...p, type: e.target.value }))} className="input-field">
-                {LEAVE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="input-label">From Date</label>
-                <input type="date" value={form.from} onChange={e => setForm(p => ({ ...p, from: e.target.value }))} className="input-field" required />
-              </div>
-              <div>
-                <label className="input-label">To Date</label>
-                <input type="date" value={form.to} onChange={e => setForm(p => ({ ...p, to: e.target.value }))} className="input-field" required />
-              </div>
-            </div>
-            {days > 0 && (
-              <div style={{ background: "rgba(14,165,233,0.08)", border: "1px solid rgba(14,165,233,0.15)", borderRadius: 10, padding: "10px 14px" }}>
-                <p style={{ fontSize: 12, color: "#38BDF8" }}>Duration: <strong>{days} day{days > 1 ? "s" : ""}</strong> · {form.type}</p>
-              </div>
-            )}
-            {impact && (
-              <div style={{ background: "rgba(99,102,241,0.07)", border: "1px solid rgba(99,102,241,0.15)", borderRadius: 10, padding: "12px 14px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                  <Sparkles style={{ width: 12, height: 12, color: "#818CF8" }} />
-                  <span style={{ fontSize: 11, color: "#818CF8", fontWeight: 700 }}>AI IMPACT ANALYSIS</span>
-                  <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 100, color: impact.color, background: `${impact.color}18`, border: `1px solid ${impact.color}30`, marginLeft: "auto" }}>{impact.level}</span>
-                </div>
-                <p style={{ fontSize: 12, color: "rgba(255,255,255,0.6)" }}>{impact.msg}</p>
-              </div>
-            )}
-            <div>
-              <label className="input-label">Reason <span style={{ color: "rgba(255,255,255,0.3)", textTransform: "none", fontWeight: 400 }}>(required)</span></label>
-              <textarea value={form.reason} onChange={e => setForm(p => ({ ...p, reason: e.target.value }))} className="input-field" rows={3} placeholder="Provide a detailed reason..." required style={{ resize: "vertical" }} />
+              <label className="input-label">End Date</label>
+              <input
+                type="date"
+                value={form.to}
+                onChange={e => setForm(p => ({ ...p, to: e.target.value }))}
+                className="input-field font-mono text-sm"
+                required
+              />
             </div>
           </div>
-          <div style={{ display: "flex", gap: 10, marginTop: 22 }}>
-            <button type="button" className="btn-secondary" style={{ flex: 1, justifyContent: "center" }} onClick={onClose}>Cancel</button>
-            <button type="submit" disabled={loading} className="btn-primary" style={{ flex: 1, justifyContent: "center" }}>
+
+          {days > 0 && (
+            <div className="rounded-xl border border-brand-200 bg-brand-50/60 p-3 text-xs text-brand-800 dark:border-brand-500/20 dark:bg-brand-500/10 dark:text-brand-300">
+              Total Duration: <strong className="font-mono">{days} day{days > 1 ? "s" : ""}</strong> ({form.type})
+            </div>
+          )}
+
+          {impact && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-3 text-xs dark:border-amber-500/20 dark:bg-amber-500/10">
+              <div className="flex items-center gap-1.5 mb-1 font-bold text-amber-800 dark:text-amber-300">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>AI Roster Impact: </span>
+                <Badge variant="solid" color={impact.color} size="sm">{impact.level}</Badge>
+              </div>
+              <p className="text-gray-700 dark:text-gray-300">{impact.msg}</p>
+            </div>
+          )}
+
+          <div>
+            <label className="input-label">Reason for Request</label>
+            <textarea
+              value={form.reason}
+              onChange={e => setForm(p => ({ ...p, reason: e.target.value }))}
+              className="input-field text-sm"
+              rows={3}
+              placeholder="State medical reason or emergency context..."
+              required
+            />
+          </div>
+
+          <div className="flex gap-3 pt-3">
+            <Button variant="outline" className="flex-1" onClick={onClose} type="button">
+              Cancel
+            </Button>
+            <Button variant="primary" className="flex-1" type="submit" disabled={loading}>
               {loading ? "Submitting..." : "Submit Application"}
-            </button>
+            </Button>
           </div>
         </form>
       </div>
@@ -166,77 +210,109 @@ function HospitalCalendar({ requests }) {
   const isCurrentMonth = viewMonth === today.getMonth() && viewYear === today.getFullYear();
 
   return (
-    <div className="glass-card" style={{ padding: 24 }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+    <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs dark:border-gray-800 dark:bg-white/[0.03]">
+      <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 style={{ fontSize: 18, fontWeight: 800, color: "#fff" }}>{MONTHS[viewMonth]} {viewYear}</h3>
-          <p style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>Hospital Leave & Attendance Calendar</p>
+          <h3 className="text-base font-bold text-gray-900 dark:text-white">
+            {MONTHS[viewMonth]} {viewYear}
+          </h3>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Hospital Staff Leave & Holiday Schedule</p>
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <button className="btn-secondary" style={{ padding: "8px 12px" }} onClick={() => { if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1); } else setViewMonth(m => m - 1); }}>
-            <ChevronLeft style={{ width: 16, height: 16 }} />
-          </button>
-          <button className="btn-secondary" style={{ padding: "8px 12px" }} onClick={() => { if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y + 1); } else setViewMonth(m => m + 1); }}>
-            <ChevronRight style={{ width: 16, height: 16 }} />
-          </button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1); }
+              else setViewMonth(m => m - 1);
+            }}
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y + 1); }
+              else setViewMonth(m => m + 1);
+            }}
+          >
+            <ChevronRight className="w-4 h-4" />
+          </Button>
         </div>
       </div>
 
       {/* Legend */}
-      <div style={{ display: "flex", gap: 16, marginBottom: 16, flexWrap: "wrap" }}>
-        {[
-          { color: "#34D399", label: "High Attendance" },
-          { color: "#FBBF24", label: "Staff on Leave" },
-          { color: "#818CF8", label: "Holiday" },
-          { color: "#38BDF8", label: "Today" },
-        ].map(l => (
-          <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "rgba(255,255,255,0.5)" }}>
-            <div style={{ width: 8, height: 8, borderRadius: 2, background: l.color }} />
-            {l.label}
+      <div className="flex flex-wrap items-center gap-4 mb-4 text-xs">
+        <span className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
+          <span className="w-2.5 h-2.5 rounded bg-brand-500" /> Today
+        </span>
+        <span className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
+          <span className="w-2.5 h-2.5 rounded bg-emerald-500" /> Present / Approved
+        </span>
+        <span className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
+          <span className="w-2.5 h-2.5 rounded bg-amber-500" /> Staff on Leave
+        </span>
+        <span className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
+          <span className="w-2.5 h-2.5 rounded bg-purple-500" /> Gazetted Holiday
+        </span>
+      </div>
+
+      {/* Day of Week */}
+      <div className="grid grid-cols-7 gap-2 mb-2">
+        {DAYS.map(d => (
+          <div key={d} className="text-center font-bold text-gray-400 dark:text-gray-500 text-xs py-1">
+            {d}
           </div>
         ))}
       </div>
 
-      {/* Day headers */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4, marginBottom: 4 }}>
-        {DAYS.map(d => (
-          <div key={d} style={{ textAlign: "center", fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.35)", padding: "6px 0", letterSpacing: "0.04em" }}>{d}</div>
-        ))}
-      </div>
-
-      {/* Calendar cells */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4 }}>
+      {/* Calendar Grid */}
+      <div className="grid grid-cols-7 gap-2">
         {cells.map((day, i) => {
-          if (!day) return <div key={`e-${i}`} />;
-          const isToday      = isCurrentMonth && day === todayDate;
-          const leavesOnDay  = leaveMap[day] || [];
-          const isWeekend    = new Date(viewYear, viewMonth, day).getDay() === 0;
-          const calEntry     = calData[`${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`];
-          const isHoliday    = calEntry?.holiday;
-
-          let bg     = "rgba(255,255,255,0.03)";
-          let border = "rgba(255,255,255,0.06)";
-          let textColor = "rgba(255,255,255,0.7)";
-          if (isToday)    { bg = "rgba(14,165,233,0.15)"; border = "rgba(14,165,233,0.4)"; textColor = "#38BDF8"; }
-          if (isWeekend)  { bg = "rgba(255,255,255,0.015)"; textColor = "rgba(255,255,255,0.3)"; }
-          if (isHoliday)  { bg = "rgba(99,102,241,0.12)"; border = "rgba(99,102,241,0.25)"; textColor = "#818CF8"; }
+          if (!day) return <div key={`e-${i}`} className="min-h-[70px]" />;
+          const isToday = isCurrentMonth && day === todayDate;
+          const leavesOnDay = leaveMap[day] || [];
+          const isWeekend = new Date(viewYear, viewMonth, day).getDay() === 0;
+          const calEntry = calData[`${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`];
+          const isHoliday = calEntry?.holiday;
 
           return (
-            <div key={day} style={{ background: bg, border: `1px solid ${border}`, borderRadius: 10, padding: "8px 6px", minHeight: 64, position: "relative", transition: "all 0.15s" }}>
-              <span style={{ fontSize: 12, fontWeight: isToday ? 800 : 600, color: textColor, display: "block", textAlign: "right", marginBottom: 4 }}>{day}</span>
-              {isHoliday && calEntry?.holidayName && (
-                <div style={{ fontSize: 9, color: "#818CF8", fontWeight: 700, lineHeight: 1.2, textAlign: "center" }}>{calEntry.holidayName}</div>
-              )}
+            <div
+              key={day}
+              className={`min-h-[70px] rounded-xl border p-2 text-xs transition-all ${
+                isToday
+                  ? "border-brand-400 bg-brand-50/60 dark:border-brand-500 dark:bg-brand-500/10 shadow-xs"
+                  : isHoliday
+                  ? "border-purple-200 bg-purple-50/40 dark:border-purple-500/20 dark:bg-purple-500/10"
+                  : isWeekend
+                  ? "border-gray-100 bg-gray-50/40 dark:border-gray-800 dark:bg-white/[0.01]"
+                  : "border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.02]"
+              }`}
+            >
+              <div className="flex items-center justify-between mb-1">
+                <span className={`font-mono text-xs font-bold ${isToday ? "text-brand-600 dark:text-brand-400" : "text-gray-700 dark:text-gray-300"}`}>
+                  {day}
+                </span>
+                {isHoliday && (
+                  <span className="text-[10px] font-bold text-purple-600 dark:text-purple-400 truncate">
+                    Holiday
+                  </span>
+                )}
+              </div>
+
               {leavesOnDay.slice(0, 2).map((lr, li) => (
-                <div key={li} style={{ fontSize: 9, fontWeight: 700, color: LEAVE_COLORS[lr.leaveType] || "#38BDF8", background: `${LEAVE_COLORS[lr.leaveType] || "#38BDF8"}15`, borderRadius: 4, padding: "1px 4px", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {lr.employeeName?.split(" ")[0]}
+                <div
+                  key={li}
+                  className="rounded px-1.5 py-0.5 text-[10px] font-medium bg-brand-100/70 text-brand-800 dark:bg-brand-500/20 dark:text-brand-300 truncate mb-1"
+                >
+                  {lr.employeeName?.split(" ")[0]} ({lr.leaveType?.split(" ")[0]})
                 </div>
               ))}
               {leavesOnDay.length > 2 && (
-                <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", marginTop: 1 }}>+{leavesOnDay.length - 2} more</div>
-              )}
-              {calEntry?.onLeave > 0 && leavesOnDay.length === 0 && (
-                <div style={{ fontSize: 9, color: "#FBBF24", marginTop: 2 }}>{calEntry.onLeave} on leave</div>
+                <span className="text-[10px] font-medium text-gray-400 dark:text-gray-500">
+                  +{leavesOnDay.length - 2} more
+                </span>
               )}
             </div>
           );
@@ -249,71 +325,36 @@ function HospitalCalendar({ requests }) {
 // ─── My Balance ───────────────────────────────────────────────────────────────
 function MyBalance({ balances }) {
   return (
-    <div className="space-y-4">
-      <div className="glass-card" style={{ padding: 20 }}>
-        <h3 style={{ fontSize: 16, fontWeight: 800, color: "#fff", marginBottom: 16 }}>My Leave Balance — FY 2026-27</h3>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
+    <div className="space-y-6">
+      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs dark:border-gray-800 dark:bg-white/[0.03]">
+        <h3 className="text-base font-bold text-gray-900 dark:text-white mb-4">My Leave Quota — FY 2026-27</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {(balances || []).map(b => {
             const pct = Math.round((b.used / (b.allocated || 1)) * 100);
             return (
-              <div key={b.type} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 14, padding: "16px 18px" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: b.color || "#38BDF8" }}>{b.code}</span>
-                  <span style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", fontWeight: 600 }}>{b.allocated} days total</span>
+              <div key={b.type} className="rounded-xl border border-gray-200 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-white/[0.02]">
+                <div className="flex items-center justify-between mb-2">
+                  <Badge variant="light" color={LEAVE_COLORS[b.type] || "primary"} size="sm">
+                    {b.code}
+                  </Badge>
+                  <span className="font-mono text-xs font-semibold text-gray-500 dark:text-gray-400">
+                    {b.allocated}d total
+                  </span>
                 </div>
-                <p style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginBottom: 10 }}>{b.type}</p>
-                <div style={{ height: 6, background: "rgba(255,255,255,0.06)", borderRadius: 100, marginBottom: 8 }}>
-                  <div style={{ height: "100%", borderRadius: 100, width: `${Math.min(pct, 100)}%`, background: `linear-gradient(90deg, ${b.color}90, ${b.color})`, boxShadow: `0 0 8px ${b.color}40` }} />
+                <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-3">{b.type}</p>
+                <div className="h-2 w-full rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden mb-3">
+                  <div
+                    className="h-full rounded-full bg-brand-500 transition-all duration-300"
+                    style={{ width: `${Math.min(pct, 100)}%` }}
+                  />
                 </div>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11 }}>
-                  <span style={{ color: "#F87171" }}>Used: {b.used}</span>
-                  {b.pending > 0 && <span style={{ color: "#FBBF24" }}>Pending: {b.pending}</span>}
-                  <span style={{ color: b.color || "#34D399", fontWeight: 700 }}>Avail: {b.available}</span>
+                <div className="flex items-center justify-between text-xs font-mono">
+                  <span className="text-rose-600 dark:text-rose-400">Used: {b.used}</span>
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400">Avail: {b.available}</span>
                 </div>
               </div>
             );
           })}
-        </div>
-      </div>
-
-      {/* Summary table */}
-      <div className="glass-card" style={{ overflow: "hidden" }}>
-        <div style={{ padding: "16px 20px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-          <p style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>Leave Summary</p>
-        </div>
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr style={{ background: "rgba(255,255,255,0.03)" }}>
-                {["Leave Type", "Allocated", "Used", "Pending", "Available", "Status"].map(h => (
-                  <th key={h} className="table-header" style={{ textAlign: h === "Leave Type" ? "left" : "center" }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {(balances || []).map(b => (
-                <tr key={b.type} className="table-row">
-                  <td className="table-cell">
-                    <span style={{ fontSize: 12, fontWeight: 600, color: b.color || "#38BDF8" }}>{b.type}</span>
-                  </td>
-                  {[b.allocated, b.used, b.pending, b.available].map((v, i) => (
-                    <td key={i} className="table-cell" style={{ textAlign: "center" }}>
-                      <span style={{ fontSize: 14, fontWeight: 700, color: i === 3 ? (b.color || "#34D399") : "rgba(255,255,255,0.7)" }}>{v}</span>
-                    </td>
-                  ))}
-                  <td className="table-cell" style={{ textAlign: "center" }}>
-                    <span style={{
-                      fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 100,
-                      color: b.available > 5 ? "#34D399" : b.available > 0 ? "#FBBF24" : "#F87171",
-                      background: b.available > 5 ? "rgba(16,185,129,0.1)" : b.available > 0 ? "rgba(245,158,11,0.1)" : "rgba(239,68,68,0.1)",
-                    }}>
-                      {b.available > 5 ? "Good" : b.available > 0 ? "Low" : "Exhausted"}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         </div>
       </div>
     </div>
@@ -322,74 +363,98 @@ function MyBalance({ balances }) {
 
 // ─── Leave Request Card ───────────────────────────────────────────────────────
 function LeaveCard({ req, onAction }) {
-  const s = STATUS_CFG[req.status] || STATUS_CFG["Pending"];
   const impact = AI_IMPACTS[req.employeeId];
+  const statusColor = req.status === "Approved" ? "success" : req.status === "Rejected" ? "error" : "warning";
+
   return (
-    <div className="glass-card" style={{ padding: "20px 24px" }}>
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
-        <div style={{ flex: 1 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 12 }}>
-            <div style={{ width: 36, height: 36, borderRadius: "50%", background: "linear-gradient(135deg, rgba(14,165,233,0.2), rgba(99,102,241,0.2))", border: "1px solid rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#38BDF8", flexShrink: 0 }}>
+    <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-xs transition-all hover:border-brand-300 dark:border-gray-800 dark:bg-white/[0.03] dark:hover:border-brand-500/30">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div className="flex-1 space-y-3">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-50 text-brand-600 font-bold text-xs dark:bg-brand-500/10 dark:text-brand-400 flex-shrink-0">
               {(req.employeeName || req.name || "?").charAt(0)}
             </div>
             <div>
-              <p style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{req.employeeName || req.name}</p>
-              <p style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>{req.department} · {req.employeeId}</p>
+              <p className="text-sm font-bold text-gray-900 dark:text-white">{req.employeeName || req.name}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">
+                {req.department} · {req.employeeId}
+              </p>
             </div>
-            <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 100, color: LEAVE_COLORS[req.leaveType || req.type] || "#38BDF8", background: `${LEAVE_COLORS[req.leaveType || req.type] || "#38BDF8"}15`, border: `1px solid ${LEAVE_COLORS[req.leaveType || req.type] || "#38BDF8"}30` }}>
+            <Badge variant="light" color={LEAVE_COLORS[req.leaveType || req.type] || "primary"} size="sm">
               {req.leaveType || req.type}
-            </span>
+            </Badge>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 10 }}>
-            {[["FROM", req.from], ["TO", req.to], ["DURATION", `${req.days} day${req.days > 1 ? "s" : ""}`]].map(([label, val]) => (
-              <div key={label}>
-                <p style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginBottom: 2 }}>{label}</p>
-                <p style={{ fontSize: 13, fontWeight: 600, color: label === "DURATION" ? "#38BDF8" : "rgba(255,255,255,0.8)" }}>{val}</p>
-              </div>
-            ))}
+          <div className="grid grid-cols-3 gap-3 rounded-xl border border-gray-100 bg-gray-50/60 p-3 text-xs dark:border-gray-800 dark:bg-white/[0.02]">
+            <div>
+              <span className="text-gray-400 text-[10px] uppercase font-semibold">From</span>
+              <p className="font-mono font-medium text-gray-800 dark:text-gray-200">{req.from}</p>
+            </div>
+            <div>
+              <span className="text-gray-400 text-[10px] uppercase font-semibold">To</span>
+              <p className="font-mono font-medium text-gray-800 dark:text-gray-200">{req.to}</p>
+            </div>
+            <div>
+              <span className="text-gray-400 text-[10px] uppercase font-semibold">Duration</span>
+              <p className="font-mono font-bold text-brand-600 dark:text-brand-400">{req.days} day(s)</p>
+            </div>
           </div>
 
-          <p style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: impact ? 10 : 0 }}>
-            <span style={{ color: "rgba(255,255,255,0.3)" }}>Reason: </span>{req.reason || "Not specified"}
+          <p className="text-xs text-gray-600 dark:text-gray-300">
+            <strong className="text-gray-800 dark:text-gray-200">Reason: </strong>
+            {req.reason || "Not specified"}
           </p>
+
           {impact && (
-            <div style={{ background: "rgba(99,102,241,0.07)", border: "1px solid rgba(99,102,241,0.15)", borderRadius: 10, padding: "10px 14px", display: "flex", alignItems: "flex-start", gap: 8 }}>
-              <Sparkles style={{ width: 12, height: 12, color: "#818CF8", flexShrink: 0, marginTop: 2 }} />
+            <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50/60 p-3 text-xs dark:border-amber-500/20 dark:bg-amber-500/10">
+              <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
               <div>
-                <span style={{ fontSize: 10, color: "#818CF8", fontWeight: 700 }}>AI IMPACT: </span>
-                <span style={{ fontSize: 10, fontWeight: 700, padding: "1px 7px", borderRadius: 100, color: impact.color, background: `${impact.color}18`, border: `1px solid ${impact.color}30`, marginLeft: 4 }}>{impact.level}</span>
-                <p style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", marginTop: 3 }}>{impact.msg}</p>
+                <span className="font-bold text-amber-800 dark:text-amber-300">AI Staffing Risk: </span>
+                <span className="text-gray-700 dark:text-gray-300">{impact.msg}</span>
               </div>
             </div>
           )}
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 10, flexShrink: 0 }}>
-          <span style={{ fontSize: 12, fontWeight: 700, padding: "5px 14px", borderRadius: 100, color: s.color, background: s.bg, border: `1px solid ${s.border}` }}>{req.status}</span>
+        <div className="flex flex-col items-end gap-2.5 flex-shrink-0">
+          <Badge variant="light" color={statusColor} size="md">
+            {req.status}
+          </Badge>
           {req.status === "Pending" && (
-            <div style={{ display: "flex", gap: 8 }}>
-              <button className="btn-success" style={{ fontSize: 12, padding: "7px 14px" }} onClick={() => onAction(req.id, "approve")}>
-                <Check style={{ width: 13, height: 13 }} /> Approve
-              </button>
-              <button className="btn-danger" style={{ fontSize: 12, padding: "7px 14px" }} onClick={() => onAction(req.id, "reject")}>
-                <X style={{ width: 13, height: 13 }} /> Reject
-              </button>
+            <div className="flex items-center gap-2 mt-1">
+              <Button
+                variant="success"
+                size="sm"
+                startIcon={<Check className="w-4 h-4" />}
+                onClick={() => onAction(req.id, "approve")}
+              >
+                Approve
+              </Button>
+              <Button
+                variant="danger"
+                size="sm"
+                startIcon={<X className="w-4 h-4" />}
+                onClick={() => onAction(req.id, "reject")}
+              >
+                Reject
+              </Button>
             </div>
           )}
-          {req.approvedBy && <p style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>By: {req.approvedBy}</p>}
+          {req.approvedBy && (
+            <p className="text-[10px] text-gray-400 font-mono">Audited by: {req.approvedBy}</p>
+          )}
         </div>
       </div>
     </div>
   );
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+// ─── Main Leave Component ─────────────────────────────────────────────────────
 export default function Leave() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab]   = useState("requests");
-  const [requests, setRequests]     = useState(leaveRequests);
-  const [showApply, setShowApply]   = useState(false);
+  const [activeTab, setActiveTab]       = useState("requests");
+  const [requests, setRequests]         = useState(leaveRequests);
+  const [showApply, setShowApply]       = useState(false);
   const [statusFilter, setStatusFilter] = useState("All");
 
   const pending  = requests.filter(r => r.status === "Pending");
@@ -399,7 +464,7 @@ export default function Leave() {
     setRequests(prev => prev.map(r => r.id === id
       ? { ...r, status: action === "approve" ? "Approved" : "Rejected", approvedBy: user?.name || "Admin" }
       : r));
-    toast.success(`Leave ${action === "approve" ? "approved" : "rejected"}`);
+    toast.success(`Leave request ${action === "approve" ? "approved" : "rejected"}`);
   };
 
   const handleNewLeave = (form) => {
@@ -423,51 +488,72 @@ export default function Leave() {
   };
 
   const TABS = [
-    { id: "requests",  label: `All Requests (${requests.length})`,    icon: FileText   },
-    { id: "pending",   label: `Pending (${pending.length})`,           icon: Clock      },
-    { id: "calendar",  label: "Hospital Calendar",                     icon: Calendar   },
-    { id: "balance",   label: "My Balance",                            icon: BarChart3  },
+    { id: "requests", label: `All Requests (${requests.length})`, icon: FileText },
+    { id: "pending",  label: `Pending Action (${pending.length})`, icon: Clock },
+    { id: "calendar", label: "Hospital Calendar",                 icon: Calendar },
+    { id: "balance",  label: "My Leave Balance",                  icon: BarChart3 },
   ];
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
-        <div>
-          <h1 style={{ fontSize: 26, fontWeight: 900, color: "#fff", letterSpacing: "-0.04em" }}>Leave Management</h1>
-          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginTop: 4 }}>AI-powered staffing impact analysis on every leave request</p>
-        </div>
-        <button className="btn-primary" onClick={() => setShowApply(true)}>
-          <Plus style={{ width: 15, height: 15 }} /> Apply Leave
-        </button>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <PageBreadcrumb
+          pageTitle="Leave Requests & Entitlements"
+          breadcrumbs={[
+            { label: 'Workforce', path: '/employees' },
+            { label: 'Leave' }
+          ]}
+        />
+        <Button
+          variant="primary"
+          size="sm"
+          startIcon={<Plus className="w-4 h-4" />}
+          onClick={() => setShowApply(true)}
+        >
+          Apply for Leave
+        </Button>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          { label: "Pending Requests", value: pending.length,                                         color: "#FBBF24" },
-          { label: "Approved",         value: requests.filter(r => r.status === "Approved").length,  color: "#34D399" },
-          { label: "Staff on Leave",   value: 12,                                                    color: "#38BDF8" },
-          { label: "Rejected",         value: requests.filter(r => r.status === "Rejected").length,  color: "#F87171" },
+          { label: "Pending Approvals", value: pending.length, color: "text-amber-600 dark:text-amber-400" },
+          { label: "Approved Requests", value: requests.filter(r => r.status === "Approved").length, color: "text-emerald-600 dark:text-emerald-400" },
+          { label: "Staff on Floor Leave", value: 12, color: "text-brand-600 dark:text-brand-400" },
+          { label: "Rejected Requests", value: requests.filter(r => r.status === "Rejected").length, color: "text-rose-600 dark:text-rose-400" },
         ].map(item => (
-          <div key={item.label} className="glass-card" style={{ padding: "16px 20px", textAlign: "center" }}>
-            <p style={{ fontSize: 30, fontWeight: 800, color: item.color, letterSpacing: "-0.04em" }}>{item.value}</p>
-            <p style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 4 }}>{item.label}</p>
+          <div key={item.label} className="rounded-2xl border border-gray-200 bg-white p-4 text-center shadow-xs dark:border-gray-800 dark:bg-white/[0.03]">
+            <p className={`text-2xl sm:text-3xl font-bold font-mono ${item.color}`}>{item.value}</p>
+            <p className="mt-1 text-xs font-medium text-gray-500 dark:text-gray-400">{item.label}</p>
           </div>
         ))}
       </div>
 
-      {/* Tabs */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-        <div className="tab-bar">
+      {/* Tab bar & Filter */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-gray-200 bg-gray-100 p-1.5 dark:border-gray-800 dark:bg-gray-900/60 w-fit">
           {TABS.map(tab => (
-            <button key={tab.id} className={activeTab === tab.id ? "tab-active" : "tab-item"} onClick={() => setActiveTab(tab.id)}>
+            <button
+              key={tab.id}
+              className={`rounded-lg px-4 py-2 text-xs sm:text-sm font-semibold transition-all ${
+                activeTab === tab.id
+                  ? "bg-white text-brand-600 shadow-xs dark:bg-brand-500 dark:text-white"
+                  : "text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+              }`}
+              onClick={() => setActiveTab(tab.id)}
+            >
               {tab.label}
             </button>
           ))}
         </div>
+
         {(activeTab === "requests" || activeTab === "pending") && (
-          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="input-field" style={{ width: "auto", fontSize: 12 }}>
+          <select
+            value={statusFilter}
+            onChange={e => setStatusFilter(e.target.value)}
+            className="input-field text-xs w-auto"
+          >
             <option value="All">All Statuses</option>
             <option value="Pending">Pending</option>
             <option value="Approved">Approved</option>
@@ -476,29 +562,35 @@ export default function Leave() {
         )}
       </div>
 
-      {/* All Requests */}
+      {/* Requests Lists */}
       {(activeTab === "requests" || activeTab === "pending") && (
         <div className="space-y-4">
           {(activeTab === "pending" ? pending : filtered).map(req => (
             <LeaveCard key={req.id} req={req} onAction={handleAction} />
           ))}
           {(activeTab === "pending" ? pending : filtered).length === 0 && (
-            <div className="glass-card" style={{ padding: 48, textAlign: "center" }}>
-              <Calendar style={{ width: 40, height: 40, color: "rgba(255,255,255,0.15)", margin: "0 auto 12px" }} />
-              <p style={{ color: "rgba(255,255,255,0.4)" }}>No leave requests found</p>
+            <div className="rounded-2xl border border-dashed border-gray-300 p-12 text-center dark:border-gray-700">
+              <Calendar className="w-10 h-10 text-gray-400 mx-auto mb-3" />
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">No matching leave requests</p>
             </div>
           )}
         </div>
       )}
 
-      {/* Hospital Calendar */}
+      {/* Calendar */}
       {activeTab === "calendar" && <HospitalCalendar requests={requests} />}
 
-      {/* My Balance */}
+      {/* Balance */}
       {activeTab === "balance" && <MyBalance balances={leaveBalances} />}
 
-      {/* Apply Modal */}
-      {showApply && <ApplyLeaveModal onClose={() => setShowApply(false)} onSubmit={handleNewLeave} currentUser={user} />}
+      {/* Modal */}
+      {showApply && (
+        <ApplyLeaveModal
+          onClose={() => setShowApply(false)}
+          onSubmit={handleNewLeave}
+          currentUser={user}
+        />
+      )}
     </div>
   );
 }

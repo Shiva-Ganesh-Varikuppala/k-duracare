@@ -1,7 +1,27 @@
 import { useState, useEffect, useRef } from 'react';
-import { Bell, Search, Sparkles, X, Wifi, Clock, Key, Shield, UserCheck, ChevronDown, Check } from 'lucide-react';
+import {
+  Bell,
+  Search,
+  Sparkles,
+  X,
+  Clock,
+  Shield,
+  UserCheck,
+  ChevronDown,
+  Check,
+  Menu,
+  LogOut,
+  Settings,
+  HelpCircle,
+  Activity,
+  CheckCircle2,
+  AlertTriangle,
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useSidebar } from '../context/SidebarContext';
 import { toast } from 'react-hot-toast';
+import ThemeToggleButton from './common/ThemeToggleButton';
+import Badge from './ui/badge/Badge';
 
 const NOTIFICATIONS = [
   { id: 1, type: 'critical', title: 'Camera Offline', message: 'CAM-OT-01 is offline — OT Entrance unmonitored', time: '5 min ago', read: false },
@@ -11,46 +31,63 @@ const NOTIFICATIONS = [
   { id: 5, type: 'info', title: 'Payroll Ready', message: 'September 2026 payroll draft is ready for review', time: '2 hr ago', read: true },
 ];
 
-const typeColors = {
-  critical: { text: '#F87171', bg: 'rgba(239,68,68,0.12)', border: 'rgba(239,68,68,0.2)', dot: '#F87171' },
-  alert:    { text: '#FB923C', bg: 'rgba(249,115,22,0.12)', border: 'rgba(249,115,22,0.2)', dot: '#FB923C' },
-  warning:  { text: '#FBBF24', bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.2)', dot: '#FBBF24' },
-  info:     { text: '#38BDF8', bg: 'rgba(14,165,233,0.12)', border: 'rgba(14,165,233,0.2)', dot: '#38BDF8' },
-};
-
 function LiveClock() {
   const [time, setTime] = useState(new Date());
   useEffect(() => {
     const t = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(t);
   }, []);
+
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-      <Clock style={{ width: 13, height: 13, color: 'rgba(255,255,255,0.35)' }} />
-      <span style={{ fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: 'rgba(255,255,255,0.5)', letterSpacing: '0.05em' }}>
-        {time.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-      </span>
+    <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/40 text-xs text-gray-500 dark:text-gray-400 font-mono">
+      <Clock className="w-3.5 h-3.5 text-brand-500" />
+      <span>{time.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
     </div>
   );
 }
 
-export default function TopBar({ sidebarCollapsed }) {
-  const { user, switchRole, DEMO_USERS, ROLES } = useAuth();
+export default function TopBar() {
+  const { user, switchRole, DEMO_USERS, logout } = useAuth();
+  const { toggleSidebar, toggleMobileSidebar, isMobileOpen } = useSidebar();
+
   const [showNotifs, setShowNotifs] = useState(false);
-  const [showRoleMenu, setShowRoleMenu] = useState(false);
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [showRoleSwitcher, setShowRoleSwitcher] = useState(false);
   const [notifs, setNotifs] = useState(NOTIFICATIONS);
   const [search, setSearch] = useState('');
   const [roleSearch, setRoleSearch] = useState('');
-  const roleMenuRef = useRef(null);
 
-  const unread = notifs.filter(n => !n.read).length;
-  const markAllRead = () => setNotifs(n => n.map(x => ({ ...x, read: true })));
+  const searchInputRef = useRef(null);
+  const notifRef = useRef(null);
+  const userDropdownRef = useRef(null);
 
-  // Close dropdown on outside click
+  const unreadCount = notifs.filter((n) => !n.read).length;
+
+  const markAllRead = () => {
+    setNotifs((n) => n.map((x) => ({ ...x, read: true })));
+    toast.success('All notifications marked as read');
+  };
+
+  // Keyboard shortcut Ctrl+K / Cmd+K to focus search
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Click outside listener
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (roleMenuRef.current && !roleMenuRef.current.contains(e.target)) {
-        setShowRoleMenu(false);
+      if (notifRef.current && !notifRef.current.contains(e.target)) {
+        setShowNotifs(false);
+      }
+      if (userDropdownRef.current && !userDropdownRef.current.contains(e.target)) {
+        setShowUserDropdown(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -59,281 +96,251 @@ export default function TopBar({ sidebarCollapsed }) {
 
   const handleSelectRole = (demo) => {
     switchRole(demo.role);
-    setShowRoleMenu(false);
-    toast.success(`Switched role to: ${demo.role} (${demo.name})`);
+    setShowUserDropdown(false);
+    setShowRoleSwitcher(false);
+    toast.success(`Active persona switched to: ${demo.role}`);
   };
 
-  const getRoleColor = (role) => {
-    switch (role) {
-      case ROLES.SUPER_ADMIN: return '#38BDF8';
-      case ROLES.MANAGEMENT: return '#818CF8';
-      case ROLES.HR_ADMIN: return '#A78BFA';
-      case ROLES.PAYROLL_OFFICER: return '#C084FC';
-      case ROLES.DOCTOR: return '#34D399';
-      case ROLES.NURSE:
-      case ROLES.ICU_STAFF: return '#FBBF24';
-      case ROLES.SECURITY_SUPERVISOR:
-      case ROLES.SECURITY_GUARD: return '#2DD4BF';
-      case ROLES.LAB_STAFF: return '#06B6D4';
-      case ROLES.OT_STAFF: return '#EC4899';
-      case ROLES.PHYSIO_STAFF: return '#10B981';
-      case ROLES.RECEPTIONIST: return '#38BDF8';
-      case ROLES.HOUSEKEEPING_SUPERVISOR: return '#F59E0B';
-      default: return '#94A3B8';
+  const handleToggle = () => {
+    if (window.innerWidth >= 1280) {
+      toggleSidebar();
+    } else {
+      toggleMobileSidebar();
     }
   };
 
+  const filteredRoles = DEMO_USERS.filter(
+    (u) =>
+      u.role.toLowerCase().includes(roleSearch.toLowerCase()) ||
+      u.name.toLowerCase().includes(roleSearch.toLowerCase()) ||
+      u.dept.toLowerCase().includes(roleSearch.toLowerCase())
+  );
+
   return (
-    <header
-      className="topbar-glass fixed top-0 right-0 z-40 flex items-center px-6 gap-4 transition-all"
-      style={{
-        height: 'var(--topbar-height)',
-        left: sidebarCollapsed ? 'var(--sidebar-collapsed)' : 'var(--sidebar-width)',
-        transitionDuration: '300ms',
-        transitionTimingFunction: 'cubic-bezier(0.4,0,0.2,1)',
-      }}
-    >
-      {/* Search Bar */}
-      <div style={{ flex: 1, maxWidth: 360, position: 'relative' }}>
-        <Search style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', width: 14, height: 14, color: 'rgba(255,255,255,0.3)' }} />
-        <input
-          type="text"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="Search hospital records, staff..."
-          className="input-field"
-          style={{ paddingLeft: 36, paddingTop: 8, paddingBottom: 8, fontSize: 12 }}
-        />
-      </div>
-
-      <div className="flex items-center gap-3" style={{ marginLeft: 'auto' }}>
-        {/* Live clock */}
-        <div className="hidden md:block">
-          <LiveClock />
-        </div>
-
-        {/* Role Switcher Pill & Dropdown for Testing & Real Fragmentation */}
-        <div className="relative" ref={roleMenuRef}>
+    <header className="sticky top-0 z-40 flex h-18 w-full border-b border-gray-200/80 bg-white/90 backdrop-blur-xl dark:border-gray-800 dark:bg-gray-900/90 transition-colors">
+      <div className="flex grow items-center justify-between px-4 sm:px-6">
+        {/* Left Section: Toggle Button & Search */}
+        <div className="flex items-center gap-3 sm:gap-4 flex-1 max-w-lg">
           <button
             type="button"
-            onClick={() => setShowRoleMenu(!showRoleMenu)}
-            style={{
-              background: 'rgba(255, 255, 255, 0.05)',
-              border: `1px solid ${getRoleColor(user?.role)}40`,
-              borderRadius: '12px',
-              padding: '6px 12px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-            }}
-            title="Click to switch and test different hospital roles"
+            onClick={handleToggle}
+            className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:border-gray-800 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white transition-colors"
+            aria-label="Toggle Navigation"
           >
-            <div style={{
-              width: 8, height: 8, borderRadius: '50%',
-              background: getRoleColor(user?.role),
-              boxShadow: `0 0 8px ${getRoleColor(user?.role)}`,
-            }} />
-            <div style={{ textAlign: 'left' }}>
-              <div style={{ fontSize: '11px', fontWeight: '700', color: '#fff', lineHeight: 1.2 }}>
-                {user?.role}
-              </div>
-              <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>
-                Role Switcher ▼
-              </div>
-            </div>
+            <Menu className="h-5 w-5" />
           </button>
 
-          {/* Role Dropdown Menu */}
-          {showRoleMenu && (
-            <div
-              className="modal-glass animate-scale-in"
-              style={{
-                position: 'absolute',
-                right: 0,
-                top: '48px',
-                width: '340px',
-                zIndex: 100,
-                borderRadius: '18px',
-                padding: '10px',
-                boxShadow: '0 20px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.1)',
-              }}
-            >
-              <div style={{ padding: '6px 8px 8px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                <p style={{ fontSize: '11px', fontWeight: '700', color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Hospital Role Switcher (22 Roles)
-                </p>
-                <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginTop: '2px', marginBottom: '8px' }}>
-                  Select any profile to test purpose-built dashboards & scopes
-                </p>
-                <input
-                  type="text"
-                  value={roleSearch}
-                  onChange={e => setRoleSearch(e.target.value)}
-                  placeholder="Filter by role, name, department..."
-                  className="input-field"
-                  style={{ width: '100%', padding: '6px 10px', fontSize: '11px' }}
-                />
-              </div>
-
-              <div style={{ maxHeight: '320px', overflowY: 'auto', paddingTop: '4px' }}>
-                {DEMO_USERS
-                  .filter(demo => 
-                    !roleSearch ||
-                    demo.role.toLowerCase().includes(roleSearch.toLowerCase()) ||
-                    demo.name.toLowerCase().includes(roleSearch.toLowerCase()) ||
-                    demo.dept.toLowerCase().includes(roleSearch.toLowerCase())
-                  )
-                  .map(demo => {
-                  const isCurrent = user?.role === demo.role;
-                  const color = getRoleColor(demo.role);
-                  return (
-                    <button
-                      key={demo.id}
-                      type="button"
-                      onClick={() => handleSelectRole(demo)}
-                      style={{
-                        width: '100%',
-                        textAlign: 'left',
-                        padding: '8px 12px',
-                        borderRadius: '10px',
-                        background: isCurrent ? 'rgba(255,255,255,0.08)' : 'transparent',
-                        border: isCurrent ? `1px solid ${color}40` : '1px solid transparent',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease',
-                        marginBottom: '4px',
-                      }}
-                      onMouseEnter={e => {
-                        if (!isCurrent) e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
-                      }}
-                      onMouseLeave={e => {
-                        if (!isCurrent) e.currentTarget.style.background = 'transparent';
-                      }}
-                    >
-                      <div>
-                        <div style={{ fontSize: '11px', fontWeight: '700', color: color }}>
-                          {demo.role}
-                        </div>
-                        <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)', fontWeight: '500' }}>
-                          {demo.name}
-                        </div>
-                        <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.35)' }}>
-                          {demo.clearance}
-                        </div>
-                      </div>
-                      {isCurrent && <Check style={{ width: '14px', height: '14px', color }} />}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+          {/* Search Box */}
+          <div className="relative flex-1">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
+            <input
+              ref={searchInputRef}
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search records, teams, or reports..."
+              className="h-10 sm:h-11 w-full rounded-lg border border-gray-200 bg-gray-50 pl-10 pr-12 text-sm text-gray-800 placeholder:text-gray-400 focus:border-brand-500 focus:bg-white focus:outline-none dark:border-gray-800 dark:bg-gray-800/60 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-brand-400 dark:focus:bg-gray-800 transition-all"
+            />
+            <kbd className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center gap-0.5 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-700 px-1.5 py-0.5 text-[10px] font-medium text-gray-400 dark:text-gray-300">
+              ⌘K
+            </kbd>
+          </div>
         </div>
 
-        {/* Notifications Icon Button */}
-        <div style={{ position: 'relative' }}>
-          <button
-            onClick={() => setShowNotifs(!showNotifs)}
-            className="btn-icon"
-            style={{ position: 'relative', padding: 8 }}
-            title="Notifications"
-          >
-            <Bell style={{ width: 16, height: 16 }} />
-            {unread > 0 && (
-              <span style={{
-                position: 'absolute', top: -2, right: -2,
-                width: 16, height: 16, borderRadius: '50%',
-                background: '#EF4444', color: '#fff',
-                fontSize: 9, fontWeight: 700,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: '0 0 8px rgba(239,68,68,0.5)',
-              }}>
-                {unread}
-              </span>
-            )}
-          </button>
+        {/* Right Section: Clock, Notifications, Theme Toggle, User Profile */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          <LiveClock />
 
-          {showNotifs && (
-            <div
-              className="modal-glass animate-scale-in"
-              style={{
-                position: 'absolute', right: 0, top: '52px',
-                width: 340, zIndex: 100,
-                borderRadius: 20,
-              }}
+          <div className="hidden xl:flex items-center gap-2 rounded-lg border border-brand-100 bg-brand-50/70 px-3 py-1.5 text-[11px] font-medium text-brand-700 dark:border-brand-500/15 dark:bg-brand-500/10 dark:text-brand-300">
+            <Shield className="h-3.5 w-3.5" />
+            Secure demo workspace
+          </div>
+
+          {/* Notifications Dropdown */}
+          <div className="relative" ref={notifRef}>
+            <button
+              type="button"
+              onClick={() => setShowNotifs((p) => !p)}
+              className="relative flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
             >
-              <div className="flex items-center justify-between p-4 border-b border-white/5">
-                <div>
-                  <p style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>Notifications</p>
-                  {unread > 0 && (
-                    <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 1 }}>{unread} unread alerts</p>
+              <Bell className="h-5 w-5" />
+              {unreadCount > 0 && (
+                <span className="absolute top-2 right-2 flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500" />
+                </span>
+              )}
+            </button>
+
+            {/* Dropdown Menu */}
+            {showNotifs && (
+              <div className="absolute right-0 mt-3 w-80 sm:w-96 rounded-2xl border border-gray-200 bg-white p-4 shadow-theme-lg dark:border-gray-800 dark:bg-gray-900 animate-scale-in z-50">
+                <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-3 mb-3">
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-800 dark:text-white">
+                      Notifications
+                    </h4>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {unreadCount} unread hospital alerts
+                    </p>
+                  </div>
+                  {unreadCount > 0 && (
+                    <button
+                      onClick={markAllRead}
+                      className="text-xs font-medium text-brand-500 hover:text-brand-600 dark:text-brand-400"
+                    >
+                      Mark all read
+                    </button>
                   )}
                 </div>
-                <div className="flex items-center gap-2">
-                  {unread > 0 && (
-                    <button className="btn-ghost" style={{ padding: '4px 10px', fontSize: 11 }} onClick={markAllRead}>Mark all read</button>
-                  )}
-                  <button className="btn-icon" style={{ padding: 6 }} onClick={() => setShowNotifs(false)}>
-                    <X style={{ width: 14, height: 14 }} />
-                  </button>
-                </div>
-              </div>
-              <div style={{ maxHeight: 340, overflowY: 'auto' }}>
-                {notifs.map(n => {
-                  const c = typeColors[n.type];
-                  return (
+
+                <div className="custom-scrollbar max-h-72 overflow-y-auto space-y-2">
+                  {notifs.map((n) => (
                     <div
                       key={n.id}
-                      onClick={() => setNotifs(prev => prev.map(x => x.id === n.id ? { ...x, read: true } : x))}
-                      style={{
-                        padding: '14px 16px',
-                        borderBottom: '1px solid rgba(255,255,255,0.04)',
-                        opacity: n.read ? 0.5 : 1,
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease',
-                      }}
-                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}
-                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                      className={`p-3 rounded-xl border transition-colors ${
+                        n.read
+                          ? 'border-transparent bg-transparent hover:bg-gray-50 dark:hover:bg-gray-800/40 text-gray-600 dark:text-gray-400'
+                          : 'border-brand-100 dark:border-brand-500/20 bg-brand-50/40 dark:bg-brand-500/5 text-gray-800 dark:text-gray-200'
+                      }`}
                     >
-                      <div className="flex items-start gap-3">
-                        <div style={{
-                          width: 7, height: 7, borderRadius: '50%',
-                          background: c.dot, flexShrink: 0, marginTop: 5,
-                          boxShadow: n.read ? 'none' : `0 0 6px ${c.dot}`,
-                        }} />
-                        <div>
-                          <p style={{ fontSize: 12, fontWeight: 600, color: c.text }}>{n.title}</p>
-                          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', marginTop: 2, lineHeight: 1.4 }}>{n.message}</p>
-                          <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 4 }}>{n.time}</p>
+                      <div className="flex items-start justify-between gap-2">
+                        <span className="text-xs font-semibold">{n.title}</span>
+                        <span className="text-[10px] text-gray-400">{n.time}</span>
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                        {n.message}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Theme Toggle (Dark / Light) */}
+          <ThemeToggleButton />
+
+          {/* User Profile & Role Switcher Dropdown */}
+          {user && (
+            <div className="relative" ref={userDropdownRef}>
+              <button
+                type="button"
+                onClick={() => setShowUserDropdown((p) => !p)}
+                className="flex items-center gap-3 rounded-full border border-gray-200 bg-white p-1 pr-3 hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+              >
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-500 text-white font-bold text-xs shadow-theme-xs">
+                  {user.avatar || user.name?.charAt(0) || 'U'}
+                </div>
+
+                <div className="hidden md:flex flex-col text-left">
+                  <span className="text-xs font-semibold text-gray-800 dark:text-white truncate max-w-[120px]">
+                    {user.name}
+                  </span>
+                  <span className="text-[10px] text-gray-500 dark:text-gray-400 truncate max-w-[120px]">
+                    {user.role}
+                  </span>
+                </div>
+
+                <ChevronDown className="h-4 w-4 text-gray-400" />
+              </button>
+
+              {/* User Dropdown */}
+              {showUserDropdown && (
+                <div className="absolute right-0 mt-3 w-80 rounded-2xl border border-gray-200 bg-white p-4 shadow-theme-lg dark:border-gray-800 dark:bg-gray-900 animate-scale-in z-50">
+                  {/* User Profile Header */}
+                  <div className="border-b border-gray-100 dark:border-gray-800 pb-3 mb-3">
+                    <p className="text-sm font-bold text-gray-800 dark:text-white">
+                      {user.name}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {user.email}
+                    </p>
+                    <div className="mt-2 flex items-center gap-1.5">
+                      <Badge color="primary" size="sm">
+                        {user.role}
+                      </Badge>
+                      <Badge color="light" size="sm">
+                        {user.dept}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  {/* 1-Click Role Switcher Trigger */}
+                  <div className="mb-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowRoleSwitcher((p) => !p)}
+                      className="flex w-full items-center justify-between rounded-xl bg-brand-50 p-2.5 text-xs font-semibold text-brand-600 hover:bg-brand-100 dark:bg-brand-500/10 dark:text-brand-400 dark:hover:bg-brand-500/20 transition-colors"
+                    >
+                      <span className="flex items-center gap-2">
+                        <Shield className="h-4 w-4" /> Switch Hospital Persona
+                      </span>
+                      <ChevronDown
+                        className={`h-4 w-4 transition-transform ${
+                          showRoleSwitcher ? 'rotate-180' : ''
+                        }`}
+                      />
+                    </button>
+
+                    {/* Role Selection List */}
+                    {showRoleSwitcher && (
+                      <div className="mt-2 border border-gray-100 dark:border-gray-800 rounded-xl p-2 bg-gray-50 dark:bg-gray-800/40">
+                        <input
+                          type="text"
+                          value={roleSearch}
+                          onChange={(e) => setRoleSearch(e.target.value)}
+                          placeholder="Search 22 roles..."
+                          className="w-full text-xs p-2 mb-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:outline-none"
+                        />
+                        <div className="custom-scrollbar max-h-48 overflow-y-auto space-y-1">
+                          {filteredRoles.map((demo) => {
+                            const isCurrent = user.role === demo.role;
+                            return (
+                              <button
+                                key={demo.id}
+                                onClick={() => handleSelectRole(demo)}
+                                className={`flex w-full items-center justify-between p-2 rounded-lg text-left text-xs transition-colors ${
+                                  isCurrent
+                                    ? 'bg-brand-500 text-white font-semibold'
+                                    : 'hover:bg-gray-200/60 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
+                                }`}
+                              >
+                                <div>
+                                  <p>{demo.role}</p>
+                                  <p
+                                    className={`text-[10px] ${
+                                      isCurrent ? 'text-brand-100' : 'text-gray-400'
+                                    }`}
+                                  >
+                                    {demo.name} · {demo.dept}
+                                  </p>
+                                </div>
+                                {isCurrent && <Check className="h-3.5 w-3.5" />}
+                              </button>
+                            );
+                          })}
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    )}
+                  </div>
+
+                  {/* Actions */}
+                  <div className="border-t border-gray-100 dark:border-gray-800 pt-2 space-y-1">
+                    <button
+                      onClick={() => {
+                        setShowUserDropdown(false);
+                        logout();
+                      }}
+                      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-500/10 transition-colors"
+                    >
+                      <LogOut className="h-4 w-4" /> Sign Out
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
-        </div>
-
-        {/* User avatar */}
-        <div className="flex items-center gap-2">
-          <div style={{
-            width: 34, height: 34, borderRadius: '50%',
-            background: 'linear-gradient(135deg, #0EA5E9, #8B5CF6)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: '#fff', fontSize: 12, fontWeight: 700,
-            boxShadow: '0 2px 12px rgba(99,102,241,0.3)',
-          }}>
-            {user?.avatar || user?.name?.charAt(0) || 'U'}
-          </div>
-          <div className="hidden sm:block">
-            <p style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.95)' }}>{user?.name}</p>
-            <p style={{ fontSize: 10, color: getRoleColor(user?.role), fontWeight: 600 }}>{user?.role}</p>
-          </div>
         </div>
       </div>
     </header>
