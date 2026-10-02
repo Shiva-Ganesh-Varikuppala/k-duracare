@@ -74,6 +74,7 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [activeCategory, setActiveCategory] = useState('Leadership & Administration');
+  const [showDemoPanel, setShowDemoPanel] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -259,63 +260,76 @@ export default function Login() {
               </Button>
             </form>
 
-            {/* Divider */}
-            <div className="relative my-8">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200 dark:border-gray-800" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-gray-50 dark:bg-gray-900 px-3 font-semibold text-gray-400 dark:text-gray-500">
-                  Presentation personas
-                </span>
-              </div>
+            {/* Demo mode toggle */}
+            <div className="mt-6 text-center">
+              <button
+                type="button"
+                onClick={() => setShowDemoPanel((p) => !p)}
+                className="text-xs text-gray-400 dark:text-gray-500 hover:text-brand-500 dark:hover:text-brand-400 transition-colors underline underline-offset-2"
+              >
+                {showDemoPanel ? 'Hide demo accounts' : 'Demo mode — quick sign in'}
+              </button>
             </div>
 
-            {/* Categorized Demo Role Selector Tabs */}
-            <div className="space-y-4">
-              <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar border-b border-gray-200 dark:border-gray-800">
-                {CATEGORIZED_DEMO_USERS.map((cat) => (
-                  <button
-                    key={cat.category}
-                    type="button"
-                    onClick={() => setActiveCategory(cat.category)}
-                    className={`whitespace-nowrap pb-2 text-xs font-medium transition-colors px-1 ${
-                      activeCategory === cat.category
-                        ? 'text-gray-900 dark:text-white font-semibold'
-                        : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'
-                    }`}
-                  >
-                    {cat.category}
-                  </button>
-                ))}
-              </div>
+            {/* Categorized Demo Role Selector — only shown in demo mode */}
+            {showDemoPanel && (
+              <div className="mt-4 space-y-4">
+                {/* Divider */}
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-200 dark:border-gray-800" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-gray-50 dark:bg-gray-900 px-3 font-semibold text-gray-400 dark:text-gray-500">
+                      Presentation personas
+                    </span>
+                  </div>
+                </div>
 
-              {/* Roles in selected category */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {CATEGORIZED_DEMO_USERS.find((c) => c.category === activeCategory)?.roles.map(
-                  (roleItem) => (
+                <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar border-b border-gray-200 dark:border-gray-800">
+                  {CATEGORIZED_DEMO_USERS.map((cat) => (
                     <button
-                      key={roleItem.id}
+                      key={cat.category}
                       type="button"
-                      onClick={() => handleDemoSelect(roleItem.email)}
-                      className="group flex items-center justify-between p-3 rounded-lg border border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-800/40 dark:hover:bg-gray-800 transition-all text-left"
+                      onClick={() => setActiveCategory(cat.category)}
+                      className={`whitespace-nowrap pb-2 text-xs font-medium transition-colors px-1 ${
+                        activeCategory === cat.category
+                          ? 'text-gray-900 dark:text-white font-semibold'
+                          : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'
+                      }`}
                     >
-                      <div className="flex flex-col truncate pr-2">
-                        <span className="text-xs font-semibold text-gray-800 dark:text-white truncate">
-                          {roleItem.role}
-                        </span>
-                        <span className="text-[11px] text-gray-400 dark:text-gray-500 truncate mt-0.5">
-                          {roleItem.name} · {roleItem.title}
-                        </span>
-                      </div>
-                      <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-300 flex-shrink-0 transition-colors">
-                        Login →
-                      </span>
+                      {cat.category}
                     </button>
-                  )
-                )}
+                  ))}
+                </div>
+
+                {/* Roles in selected category */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {CATEGORIZED_DEMO_USERS.find((c) => c.category === activeCategory)?.roles.map(
+                    (roleItem) => (
+                      <button
+                        key={roleItem.id}
+                        type="button"
+                        onClick={() => handleDemoSelect(roleItem.email)}
+                        className="group flex items-center justify-between p-3 rounded-lg border border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-800/40 dark:hover:bg-gray-800 transition-all text-left"
+                      >
+                        <div className="flex flex-col truncate pr-2">
+                          <span className="text-xs font-semibold text-gray-800 dark:text-white truncate">
+                            {roleItem.role}
+                          </span>
+                          <span className="text-[11px] text-gray-400 dark:text-gray-500 truncate mt-0.5">
+                            {roleItem.name} · {roleItem.title}
+                          </span>
+                        </div>
+                        <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-300 flex-shrink-0 transition-colors">
+                          Login →
+                        </span>
+                      </button>
+                    )
+                  )}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>

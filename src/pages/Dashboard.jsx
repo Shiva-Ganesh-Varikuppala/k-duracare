@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import {
   Users, UserCheck, Calendar, AlertTriangle, Video,
   Sparkles, Send, Bot, ChevronRight, Activity, Clock,
@@ -295,9 +295,19 @@ export default function Dashboard() {
               <h2 className="text-sm font-semibold text-gray-800 dark:text-white">Attendance this week</h2>
               <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Daily present vs absent headcount</p>
             </div>
-            <button onClick={() => navigate('/attendance')} className="flex items-center gap-1 text-xs text-gray-400 hover:text-brand-500 dark:hover:text-brand-400 transition-colors">
-              View full report <ArrowRight className="h-3.5 w-3.5" />
-            </button>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-full bg-[#167568]" />
+                <span className="text-[11px] text-gray-500 dark:text-gray-400">Present</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-full bg-red-400" />
+                <span className="text-[11px] text-gray-500 dark:text-gray-400">Absent</span>
+              </div>
+              <button onClick={() => navigate('/attendance')} className="flex items-center gap-1 text-xs text-gray-400 hover:text-brand-500 dark:hover:text-brand-400 transition-colors">
+                View full report <ArrowRight className="h-3.5 w-3.5" />
+              </button>
+            </div>
           </div>
           <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">

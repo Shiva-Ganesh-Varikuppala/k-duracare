@@ -4,8 +4,6 @@ import {
   Search,
   Sparkles,
   X,
-  Clock,
-  Shield,
   UserCheck,
   ChevronDown,
   Check,
@@ -16,6 +14,7 @@ import {
   Activity,
   CheckCircle2,
   AlertTriangle,
+  Shield,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useSidebar } from '../context/SidebarContext';
@@ -31,20 +30,6 @@ const NOTIFICATIONS = [
   { id: 5, type: 'info', title: 'Payroll Ready', message: 'September 2026 payroll draft is ready for review', time: '2 hr ago', read: true },
 ];
 
-function LiveClock() {
-  const [time, setTime] = useState(new Date());
-  useEffect(() => {
-    const t = setInterval(() => setTime(new Date()), 1000);
-    return () => clearInterval(t);
-  }, []);
-
-  return (
-    <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/40 text-xs text-gray-500 dark:text-gray-400 font-mono">
-      <Clock className="w-3.5 h-3.5 text-brand-500" />
-      <span>{time.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
-    </div>
-  );
-}
 
 export default function TopBar() {
   const { user, switchRole, DEMO_USERS, logout } = useAuth();
@@ -147,15 +132,8 @@ export default function TopBar() {
           </div>
         </div>
 
-        {/* Right Section: Clock, Notifications, Theme Toggle, User Profile */}
+        {/* Right Section: Notifications, Theme Toggle, User Profile */}
         <div className="flex items-center gap-2 sm:gap-3">
-          <LiveClock />
-
-          <div className="hidden xl:flex items-center gap-2 rounded-lg border border-brand-100 bg-brand-50/70 px-3 py-1.5 text-[11px] font-medium text-brand-700 dark:border-brand-500/15 dark:bg-brand-500/10 dark:text-brand-300">
-            <Shield className="h-3.5 w-3.5" />
-            Secure demo workspace
-          </div>
-
           {/* Notifications Dropdown */}
           <div className="relative" ref={notifRef}>
             <button
