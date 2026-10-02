@@ -86,7 +86,7 @@ export default function EmployeeSelfServiceDashboard({ customTitle, customSubtit
   return (
     <div className="space-y-6">
       {/* Employee Greeting Header */}
-      <div className="glass-card" style={{ padding: '24px 28px', background: 'linear-gradient(135deg, rgba(14,165,233,0.12) 0%, rgba(99,102,241,0.06) 100%)' }}>
+      <div className="glass-card" style={{ padding: '24px 28px' }}>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">

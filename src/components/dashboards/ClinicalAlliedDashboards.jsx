@@ -23,7 +23,7 @@ export function OpdStaffDashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="glass-card p-6" style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(14,165,233,0.08) 100%)' }}>
+      <div className="glass-card p-6" style={{ background: 'transparent' }}>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <span className="text-xs font-bold uppercase tracking-wider text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-0.5 rounded-full">
@@ -131,7 +131,7 @@ export function LabStaffDashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="glass-card p-6" style={{ background: 'linear-gradient(135deg, rgba(6,182,212,0.12) 0%, rgba(59,130,246,0.08) 100%)' }}>
+      <div className="glass-card p-6" style={{ background: 'transparent' }}>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <span className="text-xs font-bold uppercase tracking-wider text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 px-2.5 py-0.5 rounded-full">
@@ -230,7 +230,7 @@ export function OtStaffDashboard() {
   const { user } = useAuth();
   return (
     <div className="space-y-6">
-      <div className="glass-card p-6" style={{ background: 'linear-gradient(135deg, rgba(236,72,153,0.12) 0%, rgba(139,92,246,0.08) 100%)' }}>
+      <div className="glass-card p-6" style={{ background: 'transparent' }}>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <span className="text-xs font-bold uppercase tracking-wider text-pink-400 bg-pink-500/10 border border-pink-500/20 px-2.5 py-0.5 rounded-full">
@@ -304,7 +304,7 @@ export function PhysioStaffDashboard() {
   const { user } = useAuth();
   return (
     <div className="space-y-6">
-      <div className="glass-card p-6" style={{ background: 'linear-gradient(135deg, rgba(16,185,129,0.12) 0%, rgba(245,158,11,0.08) 100%)' }}>
+      <div className="glass-card p-6" style={{ background: 'transparent' }}>
         <span className="text-xs font-bold uppercase tracking-wider text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full">
           Rehabilitation & Physical Therapy
         </span>
@@ -371,7 +371,7 @@ export function ReceptionDashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="glass-card p-6" style={{ background: 'linear-gradient(135deg, rgba(56,189,248,0.12) 0%, rgba(99,102,241,0.08) 100%)' }}>
+      <div className="glass-card p-6" style={{ background: 'transparent' }}>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <span className="text-xs font-bold uppercase tracking-wider text-sky-400 bg-sky-500/10 border border-sky-500/20 px-2.5 py-0.5 rounded-full">

@@ -114,7 +114,61 @@ export default function Login() {
       </div>
 
       <div className="w-full flex-1 flex flex-col lg:flex-row">
-        {/* Left Column: Sign-in Form & Persona Matrix */}
+        {/* Left Column: Hospital branding panel */}
+        <div className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12 bg-brand-950 dark:bg-white/[0.02] border-r border-gray-200 dark:border-gray-800 relative overflow-hidden text-white">
+          {/* Subtle dot-grid background */}
+          <div
+            className="absolute inset-0 opacity-10 pointer-events-none"
+            style={{
+              backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)',
+              backgroundSize: '24px 24px',
+            }}
+          />
+
+          <div className="relative z-10 flex items-center justify-between">
+            <span className="text-xs font-semibold tracking-widest uppercase text-brand-300">
+              Kanakadurga Nursing Home
+            </span>
+            <Badge color="success" size="sm">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 mr-1 animate-pulse" />
+              NABH COMPLIANT 2026
+            </Badge>
+          </div>
+
+          <div className="relative z-10 my-auto max-w-md">
+            <div className="inline-flex p-3 rounded-2xl bg-white/10 backdrop-blur-md mb-6 border border-white/10">
+              <Sparkles className="h-8 w-8 text-brand-400" />
+            </div>
+            <h2 className="text-3xl font-extrabold tracking-tight text-white mb-4 leading-tight">
+              One operational view for the entire hospital.
+            </h2>
+            <p className="text-sm text-gray-300 leading-relaxed mb-6">
+              A role-based workspace for safe staffing, attendance, facility readiness and
+              clinical coordination—built to help each team act on what matters now.
+            </p>
+            <div className="grid grid-cols-3 gap-4 pt-6 border-t border-white/10">
+              <div>
+                <span className="block text-2xl font-bold text-white">326</span>
+                <span className="text-xs text-gray-400">Total Enrolled Staff</span>
+              </div>
+              <div>
+                <span className="block text-2xl font-bold text-emerald-400">93%</span>
+                <span className="text-xs text-gray-400">ICU Shift Coverage</span>
+              </div>
+              <div>
+                <span className="block text-2xl font-bold text-brand-400">12</span>
+                <span className="text-xs text-gray-400">Monitored locations</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="relative z-10 text-xs text-gray-400 flex items-center justify-between">
+            <span>© 2026 Kanakadurga Nursing Home</span>
+            <span>Role-based access · simulated data</span>
+          </div>
+        </div>
+
+        {/* Right Column: Sign-in Form & Persona Matrix */}
         <div className="flex-1 flex flex-col justify-center px-6 py-12 sm:px-12 lg:px-16 xl:px-24">
           <div className="mx-auto w-full max-w-xl">
             {/* Header Brand */}
@@ -225,10 +279,10 @@ export default function Login() {
                     key={cat.category}
                     type="button"
                     onClick={() => setActiveCategory(cat.category)}
-                    className={`whitespace-nowrap pb-2 text-xs font-semibold transition-colors border-b-2 px-1 ${
+                    className={`whitespace-nowrap pb-2 text-xs font-medium transition-colors px-1 ${
                       activeCategory === cat.category
-                        ? 'border-brand-500 text-brand-600 dark:text-brand-400'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                        ? 'text-gray-900 dark:text-white font-semibold'
+                        : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'
                     }`}
                   >
                     {cat.category}
@@ -237,89 +291,31 @@ export default function Login() {
               </div>
 
               {/* Roles in selected category */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {CATEGORIZED_DEMO_USERS.find((c) => c.category === activeCategory)?.roles.map(
                   (roleItem) => (
                     <button
                       key={roleItem.id}
                       type="button"
                       onClick={() => handleDemoSelect(roleItem.email)}
-                      className="group flex items-center justify-between p-3 rounded-xl border border-gray-200 bg-white hover:border-brand-300 hover:bg-brand-50/40 dark:border-gray-800 dark:bg-gray-800/40 dark:hover:border-brand-500/40 dark:hover:bg-brand-500/5 transition-all text-left"
+                      className="group flex items-center justify-between p-3 rounded-lg border border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-800/40 dark:hover:bg-gray-800 transition-all text-left"
                     >
                       <div className="flex flex-col truncate pr-2">
-                        <span className="text-xs font-bold text-gray-800 dark:text-white truncate group-hover:text-brand-600 dark:group-hover:text-brand-400">
+                        <span className="text-xs font-semibold text-gray-800 dark:text-white truncate">
                           {roleItem.role}
                         </span>
-                        <span className="text-[11px] text-gray-500 dark:text-gray-400 truncate">
+                        <span className="text-[11px] text-gray-400 dark:text-gray-500 truncate mt-0.5">
                           {roleItem.name} · {roleItem.title}
                         </span>
                       </div>
-                      <Badge color={roleItem.color} size="sm">
-                        Login
-                      </Badge>
+                      <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-300 flex-shrink-0 transition-colors">
+                        Login →
+                      </span>
                     </button>
                   )
                 )}
               </div>
             </div>
-          </div>
-        </div>
-
-        {/* Right Column: Hospital product narrative */}
-        <div className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12 bg-brand-950 dark:bg-white/[0.02] border-l border-gray-200 dark:border-gray-800 relative overflow-hidden text-white">
-          {/* Subtle grid pattern background */}
-          <div
-            className="absolute inset-0 opacity-10 pointer-events-none"
-            style={{
-              backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)',
-              backgroundSize: '24px 24px',
-            }}
-          />
-
-          <div className="relative z-10 flex items-center justify-between">
-            <span className="text-xs font-semibold tracking-widest uppercase text-brand-300">
-              Kanakadurga Nursing Home
-            </span>
-            <Badge color="success" size="sm">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 mr-1 animate-pulse" />
-              NABH COMPLIANT 2026
-            </Badge>
-          </div>
-
-          <div className="relative z-10 my-auto max-w-md">
-            <div className="inline-flex p-3 rounded-2xl bg-white/10 backdrop-blur-md mb-6 border border-white/10">
-              <Sparkles className="h-8 w-8 text-brand-400" />
-            </div>
-
-            <h2 className="text-3xl font-extrabold tracking-tight text-white mb-4 leading-tight">
-              One operational view for the entire hospital.
-            </h2>
-
-            <p className="text-sm text-gray-300 leading-relaxed mb-6">
-              A role-based workspace for safe staffing, attendance, facility readiness and
-              clinical coordination—built to help each team act on what matters now.
-            </p>
-
-            {/* Quick Metrics highlight */}
-            <div className="grid grid-cols-3 gap-4 pt-6 border-t border-white/10">
-              <div>
-                <span className="block text-2xl font-bold text-white">326</span>
-                <span className="text-xs text-gray-400">Total Enrolled Staff</span>
-              </div>
-              <div>
-                <span className="block text-2xl font-bold text-emerald-400">93%</span>
-                <span className="text-xs text-gray-400">ICU Shift Coverage</span>
-              </div>
-              <div>
-                <span className="block text-2xl font-bold text-brand-400">12</span>
-                <span className="text-xs text-gray-400">Monitored locations</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="relative z-10 text-xs text-gray-400 flex items-center justify-between">
-            <span>© 2026 Kanakadurga Nursing Home</span>
-            <span>Role-based access · simulated data</span>
           </div>
         </div>
       </div>

@@ -904,3 +904,40 @@ html:not(.dark) [style*="background: rgba(255, 255, 255, 0.06)" i] {
   color: var(--color-gray-400, #98a2b3);
   border-color: var(--color-gray-700, #344054);
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   NEON / GLOW NEUTRALISER  (light mode only)
+   Role-dashboard components use inline linear-gradient() with neon
+   rgba colours inherited from the original dark-glass theme.
+   These rules replace every such surface with a plain white card.
+══════════════════════════════════════════════════════════════════ */
+
+/* Kill every inline linear-gradient background in light mode */
+html:not(.dark) [style*="linear-gradient"] {
+  background: #ffffff !important;
+}
+
+/* Kill neon glow box-shadows (0 0 Npx rgba …) in light mode */
+html:not(.dark) [style*="box-shadow: 0 0"] {
+  box-shadow: none !important;
+}
+
+/* Restore intentional depth shadows for cards / modals / dropdowns */
+html:not(.dark) .shadow-theme-xl { box-shadow: 0 20px 60px rgba(0,0,0,.10) !important; }
+html:not(.dark) .shadow-theme-lg { box-shadow: 0  8px 30px rgba(0,0,0,.08) !important; }
+html:not(.dark) .shadow-theme-md { box-shadow: 0  4px 16px rgba(0,0,0,.06) !important; }
+html:not(.dark) .shadow-theme-xs { box-shadow: 0  1px  4px rgba(0,0,0,.04) !important; }
+
+/* Ensure text inside formerly-dark gradient cards stays legible */
+html:not(.dark) [style*="linear-gradient"] .text-white,
+html:not(.dark) [style*="linear-gradient"] [class*="text-slate-"],
+html:not(.dark) [style*="linear-gradient"] .text-gray-100,
+html:not(.dark) [style*="linear-gradient"] .text-gray-200 {
+  color: #1d2939 !important;
+}
+html:not(.dark) [style*="linear-gradient"] .text-slate-400,
+html:not(.dark) [style*="linear-gradient"] .text-slate-500,
+html:not(.dark) [style*="linear-gradient"] .text-gray-400,
+html:not(.dark) [style*="linear-gradient"] .text-gray-500 {
+  color: #667085 !important;
+}

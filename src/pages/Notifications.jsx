@@ -19,10 +19,10 @@ const NOTIFICATIONS = [
 ];
 
 const TYPE_CFG = {
-  critical: { badgeColor: 'error',   label: 'Critical', Icon: AlertTriangle, iconClass: 'text-red-500 dark:text-red-400',   borderClass: 'border-l-red-500',    bgClass: 'bg-red-50 dark:bg-red-500/[0.06]' },
-  high:     { badgeColor: 'warning', label: 'High',     Icon: AlertTriangle, iconClass: 'text-orange-500 dark:text-orange-400', borderClass: 'border-l-orange-400', bgClass: 'bg-orange-50 dark:bg-orange-500/[0.06]' },
-  medium:   { badgeColor: 'warning', label: 'Medium',   Icon: Bell,          iconClass: 'text-yellow-500 dark:text-yellow-400', borderClass: 'border-l-yellow-400', bgClass: '' },
-  info:     { badgeColor: 'info',    label: 'Info',     Icon: Info,          iconClass: 'text-blue-500 dark:text-blue-400',  borderClass: 'border-l-blue-400',   bgClass: '' },
+  critical: { badgeColor: 'error',   label: 'Critical', Icon: AlertTriangle, iconClass: 'text-gray-400 dark:text-gray-500' },
+  high:     { badgeColor: 'warning', label: 'High',     Icon: AlertTriangle, iconClass: 'text-gray-400 dark:text-gray-500' },
+  medium:   { badgeColor: 'warning', label: 'Medium',   Icon: Bell,          iconClass: 'text-gray-400 dark:text-gray-500' },
+  info:     { badgeColor: 'info',    label: 'Info',     Icon: Info,          iconClass: 'text-gray-400 dark:text-gray-500' },
 };
 
 const TABS = ['All', 'Unread', 'critical', 'high', 'medium', 'info'];
@@ -105,7 +105,7 @@ export default function Notifications() {
             <div
               key={notif.id}
               onClick={() => markRead(notif.id)}
-              className={`relative cursor-pointer rounded-2xl border border-l-4 bg-white shadow-xs transition-all hover:shadow-md dark:bg-white/[0.03] ${cfg.borderClass} ${notif.read ? 'border-gray-200 dark:border-gray-800 opacity-70' : 'border-gray-200 dark:border-gray-800'} ${cfg.bgClass}`}
+              className={`relative cursor-pointer rounded-xl border bg-white transition-colors hover:bg-gray-50 dark:bg-white/[0.03] dark:hover:bg-white/[0.05] ${notif.read ? 'border-gray-100 dark:border-gray-800 opacity-60' : 'border-gray-200 dark:border-gray-700'}`}
             >
               <div className="flex items-start gap-4 p-4">
                 {/* Unread dot */}

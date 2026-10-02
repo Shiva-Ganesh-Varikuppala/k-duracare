@@ -34,7 +34,7 @@ export default function NurseDashboard({ isIcu = false }) {
   return (
     <div className="space-y-6">
       {/* Banner */}
-      <div className="glass-card p-6" style={{ background: 'linear-gradient(135deg, rgba(245,158,11,0.12) 0%, rgba(16,185,129,0.08) 100%)' }}>
+      <div className="glass-card p-6" style={{ background: 'transparent' }}>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
