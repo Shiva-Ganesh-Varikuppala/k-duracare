@@ -4,12 +4,10 @@ import { useAuth } from '../context/AuthContext';
 import {
   Eye,
   EyeOff,
-  HeartPulse,
   Shield,
   CheckCircle2,
   Lock,
   Mail,
-  Sparkles,
   ArrowRight,
   UserCheck,
   Stethoscope,
@@ -128,7 +126,7 @@ export default function Login() {
 
           <div className="relative z-10 flex items-center justify-between">
             <span className="text-xs font-semibold tracking-widest uppercase text-brand-300">
-              Kanakadurga Nursing Home
+              Kanakadurga Hospital
             </span>
             <Badge color="success" size="sm">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 mr-1 animate-pulse" />
@@ -137,8 +135,8 @@ export default function Login() {
           </div>
 
           <div className="relative z-10 my-auto max-w-md">
-            <div className="inline-flex p-3 rounded-2xl bg-white/10 backdrop-blur-md mb-6 border border-white/10">
-              <Sparkles className="h-8 w-8 text-brand-400" />
+            <div className="inline-flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl bg-white p-1 shadow-theme-md mb-6">
+              <img src="/images/logo/kanakadurga-hospital.jpg" alt="Kanakadurga Hospital logo" className="h-full w-full object-cover" />
             </div>
             <h2 className="text-3xl font-extrabold tracking-tight text-white mb-4 leading-tight">
               One operational view for the entire hospital.
@@ -164,7 +162,7 @@ export default function Login() {
           </div>
 
           <div className="relative z-10 text-xs text-gray-400 flex items-center justify-between">
-            <span>© 2026 Kanakadurga Nursing Home</span>
+            <span>© 2026 Kanakadurga Hospital</span>
             <span>Role-based access · simulated data</span>
           </div>
         </div>
@@ -174,18 +172,18 @@ export default function Login() {
           <div className="mx-auto w-full max-w-xl">
             {/* Header Brand */}
             <div className="flex items-center gap-3 mb-8">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-500 text-white shadow-theme-md">
-                <HeartPulse className="h-7 w-7" />
+              <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-theme-md ring-1 ring-gray-200 dark:ring-gray-700">
+                <img src="/images/logo/kanakadurga-hospital.jpg" alt="Kanakadurga Hospital logo" className="h-full w-full object-cover" />
               </div>
               <div>
                 <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white flex items-center gap-2">
-                  K-DuraCare
+                  Kanakadurga Hospital
                   <Badge color="primary" size="sm">
                     v2.4
                   </Badge>
                 </h1>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Hospital operations workspace
+                  A Unit of Dr K B Chowdary Healthcare Providers
                 </p>
               </div>
             </div>

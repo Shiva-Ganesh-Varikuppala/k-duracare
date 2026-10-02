@@ -93,7 +93,7 @@ export default function Settings() {
 
   // Hospital settings
   const [hospital, setHospital] = useState({
-    name: 'Kanakadurga Nursing Home',
+    name: 'Kanakadurga Hospital',
     regNo: 'APMC-KNH-2003-1284',
     nabh: 'NABH-2019-0458',
     address: 'Vijayawada, Andhra Pradesh — 520010',

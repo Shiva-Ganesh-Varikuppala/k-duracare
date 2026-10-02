@@ -21,8 +21,6 @@ import {
   ChevronDown,
   LogOut,
   Stethoscope,
-  HeartPulse,
-  Sparkles,
   Bed,
   Layers,
   ChevronRight,
@@ -244,20 +242,20 @@ export default function Sidebar() {
       {/* Sidebar Header with Brand */}
       <div className="flex h-18 items-center justify-between border-b border-gray-100 px-5 dark:border-gray-800">
         <NavLink to="/dashboard" className="flex items-center gap-3 overflow-hidden">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-500 text-white shadow-theme-sm ring-4 ring-brand-50 dark:ring-brand-500/10">
-            <HeartPulse className="h-6 w-6" />
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white shadow-theme-sm ring-4 ring-brand-50 dark:ring-brand-500/10">
+            <img src="/images/logo/kanakadurga-hospital.jpg" alt="Kanakadurga Hospital logo" className="h-full w-full object-cover" />
           </div>
 
           {(!isCollapsedView || isMobileOpen) && (
             <div className="flex flex-col truncate">
               <span className="text-base font-bold tracking-tight text-gray-900 dark:text-white flex items-center gap-1.5">
-                K-DuraCare
+                Kanakadurga Hospital
                 <span className="rounded-full bg-brand-50 px-1.5 py-0.2 text-[10px] font-semibold text-brand-500 dark:bg-brand-500/15 dark:text-brand-400">
                   HOSPITAL
                 </span>
               </span>
                 <span className="truncate text-xs text-gray-500 dark:text-gray-400">
-                Clinical operations workspace
+                A Unit of Dr K B Chowdary Healthcare Providers
               </span>
             </div>
           )}
