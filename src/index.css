@@ -162,10 +162,46 @@
   }
 
   .dark body {
-    background-color: var(--color-gray-900, #101828);
-    color: var(--color-gray-200, #e4e7ec);
+    background-color: #111315;
+    color: #e8edeb;
+    color-scheme: dark;
   }
 }
+
+/*
+  Dark healthcare system
+  A blue-black dashboard can feel severe in a clinical setting. These tokens
+  create a calmer night shift environment: deep green-charcoal foundations,
+  layered surfaces, and teal reserved for actionable information.
+*/
+.dark {
+  --clinical-canvas: #111315;
+  --clinical-surface: #181c1d;
+  --clinical-surface-raised: #202526;
+  --clinical-surface-hover: #292f30;
+  --clinical-border: #363e3e;
+  --clinical-border-subtle: #292f30;
+  --clinical-text: #f1f5f3;
+  --clinical-muted: #a4aeab;
+  --clinical-accent: #58c6b2;
+  --clinical-accent-strong: #238e7c;
+  --clinical-accent-wash: rgba(88, 198, 178, 0.12);
+}
+
+.dark :focus-visible {
+  outline: 2px solid var(--clinical-accent);
+  outline-offset: 2px;
+}
+
+.dark [class*="dark:bg-gray-900"] { background-color: var(--clinical-canvas) !important; }
+.dark [class*="dark:bg-gray-800"] { background-color: var(--clinical-surface-raised) !important; }
+.dark [class*="dark:bg-white/\["] { background-color: rgba(32, 37, 38, 0.78) !important; }
+.dark [class*="dark:border-gray-800"] { border-color: var(--clinical-border-subtle) !important; }
+.dark [class*="dark:border-gray-700"] { border-color: var(--clinical-border) !important; }
+
+.dark [class*="dark:text-gray-400"] { color: var(--clinical-muted) !important; }
+.dark [class*="dark:text-gray-300"] { color: #c6d9d4 !important; }
+.dark [class*="dark:text-white"] { color: var(--clinical-text) !important; }
 
 /* ═══════════════════════════════════════════════════════════
    TAILADMIN MENU UTILITIES
@@ -189,8 +225,8 @@
 }
 
 .dark .menu-item-active {
-  background-color: rgba(70, 95, 255, 0.12);
-  color: var(--color-brand-400, #7592ff);
+  background-color: var(--clinical-accent-wash);
+  color: var(--clinical-accent);
 }
 
 @utility menu-item-inactive {
@@ -203,12 +239,12 @@
 }
 
 .dark .menu-item-inactive {
-  color: var(--color-gray-300, #d0d5dd);
+  color: #b7cdc7;
 }
 
 .dark .menu-item-inactive:hover {
-  background-color: rgba(255, 255, 255, 0.05);
-  color: #ffffff;
+  background-color: var(--clinical-surface-hover);
+  color: var(--clinical-text);
 }
 
 @utility menu-dropdown-item {
@@ -230,8 +266,8 @@
 }
 
 .dark .menu-dropdown-item-active {
-  background-color: rgba(70, 95, 255, 0.12);
-  color: var(--color-brand-400, #7592ff);
+  background-color: var(--clinical-accent-wash);
+  color: var(--clinical-accent);
 }
 
 @utility menu-dropdown-item-inactive {
@@ -244,12 +280,12 @@
 }
 
 .dark .menu-dropdown-item-inactive {
-  color: var(--color-gray-400, #98a2b3);
+  color: var(--clinical-muted);
 }
 
 .dark .menu-dropdown-item-inactive:hover {
-  background-color: rgba(255, 255, 255, 0.05);
-  color: #ffffff;
+  background-color: var(--clinical-surface-hover);
+  color: var(--clinical-text);
 }
 
 /* Scrollbars */
@@ -310,12 +346,20 @@
   box-shadow: 0 10px 30px rgba(13, 54, 50, 0.06);
 }
 
-.dark .clinical-page { background: #101b1a; }
-.dark .clinical-panel { background: rgba(20, 34, 33, 0.9); border-color: rgba(155, 216, 206, 0.12); }
+.dark .clinical-page {
+  background:
+    radial-gradient(circle at 100% 0%, rgba(88, 198, 178, 0.045), transparent 30rem),
+    var(--clinical-canvas);
+}
+.dark .clinical-panel {
+  background: rgba(24, 28, 29, 0.94);
+  border-color: var(--clinical-border);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.2);
+}
 
 .dark .tail-card {
-  border-color: var(--color-gray-800, #1d2939);
-  background-color: rgba(255, 255, 255, 0.03);
+  border-color: var(--clinical-border-subtle);
+  background-color: var(--clinical-surface);
 }
 
 .tail-card-header {
@@ -347,14 +391,14 @@
 }
 
 .dark .tail-input {
-  border-color: var(--color-gray-700, #344054);
-  background-color: var(--color-gray-800, #1d2939);
-  color: #ffffff;
+  border-color: var(--clinical-border);
+  background-color: #141819;
+  color: var(--clinical-text);
 }
 
 .dark .tail-input:focus {
-  border-color: var(--color-brand-500, #465fff);
-  box-shadow: 0 0 0 3px rgba(22, 117, 104, 0.25);
+  border-color: var(--clinical-accent);
+  box-shadow: 0 0 0 3px rgba(88, 198, 178, 0.16);
 }
 
 /* Hospital Status Indicators */
@@ -484,9 +528,9 @@ html:not(.dark) [style*="background: rgba(255, 255, 255, 0.06)" i] {
 }
 
 .dark .glass-card {
-  background-color: rgba(255, 255, 255, 0.03);
-  border-color: var(--color-gray-800, #1d2939);
-  color: var(--color-gray-200, #e4e7ec);
+  background-color: var(--clinical-surface);
+  border-color: var(--clinical-border-subtle);
+  color: var(--clinical-text);
 }
 
 .glass-card-hover {
@@ -505,13 +549,14 @@ html:not(.dark) [style*="background: rgba(255, 255, 255, 0.06)" i] {
 }
 
 .dark .glass-card-hover {
-  background-color: rgba(255, 255, 255, 0.03);
-  border-color: var(--color-gray-800, #1d2939);
-  color: var(--color-gray-200, #e4e7ec);
+  background-color: var(--clinical-surface);
+  border-color: var(--clinical-border-subtle);
+  color: var(--clinical-text);
 }
 
 .dark .glass-card-hover:hover {
-  border-color: rgba(70, 95, 255, 0.3);
+  background-color: var(--clinical-surface-raised);
+  border-color: rgba(101, 201, 182, 0.42);
 }
 
 .stat-glass {
@@ -522,8 +567,8 @@ html:not(.dark) [style*="background: rgba(255, 255, 255, 0.06)" i] {
 }
 
 .dark .stat-glass {
-  background-color: rgba(255, 255, 255, 0.03);
-  border-color: var(--color-gray-800, #1d2939);
+  background-color: var(--clinical-surface);
+  border-color: var(--clinical-border-subtle);
 }
 
 .ai-card {
@@ -535,9 +580,9 @@ html:not(.dark) [style*="background: rgba(255, 255, 255, 0.06)" i] {
 }
 
 .dark .ai-card {
-  background-color: rgba(70, 95, 255, 0.06);
-  border-color: rgba(70, 95, 255, 0.2);
-  color: var(--color-gray-200, #e4e7ec);
+  background-color: var(--clinical-accent-wash);
+  border-color: rgba(101, 201, 182, 0.24);
+  color: var(--clinical-text);
 }
 
 .section-title {
@@ -547,7 +592,7 @@ html:not(.dark) [style*="background: rgba(255, 255, 255, 0.06)" i] {
 }
 
 .dark .section-title {
-  color: #ffffff;
+  color: var(--clinical-text);
 }
 
 .section-subtitle {
@@ -556,7 +601,7 @@ html:not(.dark) [style*="background: rgba(255, 255, 255, 0.06)" i] {
 }
 
 .dark .section-subtitle {
-  color: var(--color-gray-400, #98a2b3);
+  color: var(--clinical-muted);
 }
 
 /* TailAdmin Standard Inputs */
@@ -578,14 +623,14 @@ html:not(.dark) [style*="background: rgba(255, 255, 255, 0.06)" i] {
 }
 
 .dark .input-field {
-  border-color: var(--color-gray-700, #344054);
-  background-color: var(--color-gray-800, #1d2939);
-  color: #ffffff;
+  border-color: var(--clinical-border);
+  background-color: #141819;
+  color: var(--clinical-text);
 }
 
 .dark .input-field:focus {
-  border-color: var(--color-brand-500, #465fff);
-  box-shadow: 0 0 0 3px rgba(70, 95, 255, 0.25);
+  border-color: var(--clinical-accent);
+  box-shadow: 0 0 0 3px rgba(88, 198, 178, 0.16);
 }
 
 .input-label {
@@ -597,7 +642,7 @@ html:not(.dark) [style*="background: rgba(255, 255, 255, 0.06)" i] {
 }
 
 .dark .input-label {
-  color: var(--color-gray-300, #d0d5dd);
+  color: #c6d9d4;
 }
 
 /* TailAdmin Buttons */
@@ -642,14 +687,14 @@ html:not(.dark) [style*="background: rgba(255, 255, 255, 0.06)" i] {
 }
 
 .dark .btn-secondary {
-  border-color: var(--color-gray-700, #344054);
-  background-color: var(--color-gray-800, #1d2939);
-  color: var(--color-gray-300, #d0d5dd);
+  border-color: var(--clinical-border);
+  background-color: var(--clinical-surface-raised);
+  color: #c6d9d4;
 }
 
 .dark .btn-secondary:hover {
-  background-color: rgba(255, 255, 255, 0.05);
-  color: #ffffff;
+  background-color: var(--clinical-surface-hover);
+  color: var(--clinical-text);
 }
 
 .btn-danger {
@@ -714,9 +759,9 @@ html:not(.dark) [style*="background: rgba(255, 255, 255, 0.06)" i] {
 }
 
 .dark .modal-glass {
-  border-color: var(--color-gray-800, #1d2939);
-  background-color: var(--color-gray-900, #101828);
-  color: var(--color-gray-200, #e4e7ec);
+  border-color: var(--clinical-border);
+  background-color: var(--clinical-surface);
+  color: var(--clinical-text);
 }
 
 /* Tables */
@@ -733,9 +778,9 @@ html:not(.dark) [style*="background: rgba(255, 255, 255, 0.06)" i] {
 }
 
 .dark .table-header {
-  border-color: var(--color-gray-800, #1d2939);
-  color: var(--color-gray-400, #98a2b3);
-  background-color: rgba(255, 255, 255, 0.02);
+  border-color: var(--clinical-border-subtle);
+  color: var(--clinical-muted);
+  background-color: #15191a;
 }
 
 .table-cell {
@@ -746,8 +791,8 @@ html:not(.dark) [style*="background: rgba(255, 255, 255, 0.06)" i] {
 }
 
 .dark .table-cell {
-  color: var(--color-gray-200, #e4e7ec);
-  border-color: var(--color-gray-800, #1d2939);
+  color: #d2e2de;
+  border-color: var(--clinical-border-subtle);
 }
 
 .table-row {
@@ -759,7 +804,7 @@ html:not(.dark) [style*="background: rgba(255, 255, 255, 0.06)" i] {
 }
 
 .dark .table-row:hover {
-  background-color: rgba(255, 255, 255, 0.02);
+  background-color: var(--clinical-surface-raised);
 }
 
 /* Tabs */
@@ -774,8 +819,8 @@ html:not(.dark) [style*="background: rgba(255, 255, 255, 0.06)" i] {
 }
 
 .dark .tab-bar {
-  background-color: rgba(255, 255, 255, 0.05);
-  border-color: var(--color-gray-800, #1d2939);
+  background-color: #15191a;
+  border-color: var(--clinical-border-subtle);
 }
 
 .tab-item {
@@ -792,11 +837,11 @@ html:not(.dark) [style*="background: rgba(255, 255, 255, 0.06)" i] {
 }
 
 .dark .tab-item {
-  color: var(--color-gray-400, #98a2b3);
+  color: var(--clinical-muted);
 }
 
 .dark .tab-item:hover {
-  color: #ffffff;
+  color: var(--clinical-text);
 }
 
 .tab-active {
@@ -810,7 +855,7 @@ html:not(.dark) [style*="background: rgba(255, 255, 255, 0.06)" i] {
 }
 
 .dark .tab-active {
-  background-color: var(--color-brand-500, #465fff);
+  background-color: var(--clinical-accent-strong);
   color: #ffffff;
 }
 
@@ -828,9 +873,9 @@ html:not(.dark) [style*="background: rgba(255, 255, 255, 0.06)" i] {
 }
 
 .dark .badge-present {
-  background-color: rgba(18, 183, 106, 0.12);
-  color: var(--color-success-400, #32d583);
-  border-color: rgba(18, 183, 106, 0.25);
+  background-color: rgba(60, 187, 133, 0.13);
+  color: #73d9ae;
+  border-color: rgba(115, 217, 174, 0.25);
 }
 
 .badge-absent {
@@ -846,9 +891,9 @@ html:not(.dark) [style*="background: rgba(255, 255, 255, 0.06)" i] {
 }
 
 .dark .badge-absent {
-  background-color: rgba(240, 68, 56, 0.12);
-  color: var(--color-error-400, #f97066);
-  border-color: rgba(240, 68, 56, 0.25);
+  background-color: rgba(239, 101, 92, 0.13);
+  color: #ffaaa2;
+  border-color: rgba(255, 170, 162, 0.24);
 }
 
 .badge-late {
@@ -864,9 +909,9 @@ html:not(.dark) [style*="background: rgba(255, 255, 255, 0.06)" i] {
 }
 
 .dark .badge-late {
-  background-color: rgba(245, 158, 11, 0.12);
-  color: #fbbf24;
-  border-color: rgba(245, 158, 11, 0.25);
+  background-color: rgba(246, 181, 77, 0.13);
+  color: #f6c96c;
+  border-color: rgba(246, 201, 108, 0.24);
 }
 
 .badge-leave {
@@ -882,9 +927,9 @@ html:not(.dark) [style*="background: rgba(255, 255, 255, 0.06)" i] {
 }
 
 .dark .badge-leave {
-  background-color: rgba(70, 95, 255, 0.12);
-  color: var(--color-brand-400, #7592ff);
-  border-color: rgba(70, 95, 255, 0.25);
+  background-color: var(--clinical-accent-wash);
+  color: var(--clinical-accent);
+  border-color: rgba(101, 201, 182, 0.25);
 }
 
 .badge-off {
@@ -900,9 +945,9 @@ html:not(.dark) [style*="background: rgba(255, 255, 255, 0.06)" i] {
 }
 
 .dark .badge-off {
-  background-color: var(--color-gray-800, #1d2939);
-  color: var(--color-gray-400, #98a2b3);
-  border-color: var(--color-gray-700, #344054);
+  background-color: var(--clinical-surface-raised);
+  color: var(--clinical-muted);
+  border-color: var(--clinical-border);
 }
 
 /* ══════════════════════════════════════════════════════════════════
